@@ -1,0 +1,6 @@
+PUSH 1000
+PUSH -100
+MOV RAX [RSP - 8]
+PUSH RAX ; This is a test
+MOV RAX RSP
+PUSH 69
