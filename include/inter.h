@@ -9,6 +9,7 @@
 #define TEXT_SIZE (1024)
 #define BUFFER_SIZE (512)
 #define INSTRUCTION_SIZE (16)
+#define NUM_REG_SIZE (10)
 
 #define true (1)
 #define false (0)
@@ -21,7 +22,7 @@ typedef int bool_t;
 
 typedef enum token_type_e {TOKEN=1, REGISTER, NUM, POINTER}token_type_t;
 typedef enum token_e {PUSH=1, POP, MOV, JMP, CMP, JE, JNE, JG, JGE, JL, JLE, ADD, SUB, SET, IN, OUT}token_t;
-typedef enum register_token_e {RSP=1, RBP, RAX, RCX}register_token_t;
+typedef enum register_token_e {RSP=NUM_REG_SIZE, RBP, RAX, RCX}register_token_t;
 typedef enum flag_e {ZF=1}flag_t;
 
 extern char * tokens[];
@@ -38,6 +39,8 @@ typedef struct registers_s{
     long int rbp;
     long int rax;
     long int rcx;
+
+    long int rx[10];
 
     int etp;
 }registers_t;
@@ -75,3 +78,5 @@ static inline int is_whitespace(char c){
 }
 
 int init();
+void print_instructions();
+void print_regs();
