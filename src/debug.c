@@ -5,7 +5,7 @@ int line = 0;
 bool_t newline = false;
 int * stack = NULL;
 var_t * text = NULL;
-registers_t register_struct = {0};
+registers_t reg_struct = {0};
 instruction_t instructions[INSTRUCTION_SIZE] = {0};
 
 int init(){
@@ -17,8 +17,8 @@ int init(){
         goto cleanup;
     }
 
-    register_struct.rsp = (long int)stack;
-    register_struct.rbp = (long int)stack;
+    reg_struct.rsp.reg_64 = (long int)stack;
+    reg_struct.rbp.reg_64 = (long int)stack;
 
     text = mmap(NULL, getpagesize(), PROT_WRITE | PROT_READ, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
     if(MAP_FAILED == text){
@@ -87,7 +87,7 @@ void print_instructions(){
         else if(REGISTER == instructions[i].token_type){
             fputs("REGISTER: ", stdout);
 
-            switch(instructions[i].data.reg){
+            switch(instructions[i].data.reg.reg){
                 case RSP:
                     puts("RSP");
                     break;
@@ -101,8 +101,8 @@ void print_instructions(){
                     puts("RCX");
                     break;
                 default:
-                    if(0 <= instructions[i].data.reg && instructions[i].data.reg < NUM_REG_SIZE){
-                        printf("r%i\n", instructions[i].data.reg);
+                    if(0 <= instructions[i].data.reg.reg && instructions[i].data.reg.reg < NUM_REG_SIZE){
+                        printf("r%i\n", instructions[i].data.reg.reg);
                     }
                     else{
                         puts("\n\e[31mINVALID REGISTER\e[0m");
@@ -124,10 +124,10 @@ cleanup:
 void print_regs(){
     int i = 0;
 
-    printf("\e[1mRSP\e[0m: %li | \e[1mRBP\e[0m: %li | \e[1mRAX\e[0m: %li | \e[1mRCX\e[0m: %li\n", register_struct.rsp, register_struct.rbp, register_struct.rax, register_struct.rcx);
+    printf("\e[1mRSP\e[0m: %li | \e[1mRBP\e[0m: %li | \e[1mRAX\e[0m: %li | \e[1mRCX\e[0m: %li\n", reg_struct.rsp.reg_64, reg_struct.rbp.reg_64, reg_struct.rax.reg_64, reg_struct.rcx.reg_64);
 
     for(i=0; i<NUM_REG_SIZE; i++){
-        printf("\e[1mr%i\e[0m: %li | ", i, register_struct.rx[i]);
+        printf("\e[1mr%i\e[0m: %li | ", i, reg_struct.rx[i].reg_64);
     }
 
     putchar('\n');

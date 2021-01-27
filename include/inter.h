@@ -10,6 +10,12 @@
 #define BUFFER_SIZE (512)
 #define INSTRUCTION_SIZE (16)
 #define NUM_REG_SIZE (10)
+#define STACK_ELEMENT_SIZE (8)
+
+#define R_REG_SIZE (64)
+#define E_REG_SIZE (32)
+#define X_REG_SIZE (16)
+#define HL_REG_SIZE (8)
 
 #define true (1)
 #define false (0)
@@ -22,11 +28,18 @@ typedef int bool_t;
 
 typedef enum token_type_e {TOKEN=1, REGISTER, NUM, POINTER}token_type_t;
 typedef enum token_e {PUSH=1, POP, MOV, JMP, CMP, JE, JNE, JG, JGE, JL, JLE, ADD, SUB, SET, IN, OUT}token_t;
-typedef enum register_token_e {RSP=NUM_REG_SIZE, RBP, RAX, RCX}register_token_t;
+typedef enum register_token_e {RSP=NUM_REG_SIZE, RBP, RAX, RBX, RCX, RDX}register_token_t;
 typedef enum flag_e {ZF=1}flag_t;
 
 extern char * tokens[];
-extern char * regs[];
+extern char * regs[][5];
+
+union reg_u{
+    long int reg_64;
+    int reg_32[2];
+    short int reg_16[4];
+    char reg_8[8];
+};
 
 typedef struct var_s{
     struct var_s * next;
@@ -34,13 +47,21 @@ typedef struct var_s{
     void * value;
 }var_t;
 
-typedef struct registers_s{
-    long int rsp;
-    long int rbp;
-    long int rax;
-    long int rcx;
+struct reg_token_e{
+    register_token_t reg;
+    int size;
+    int index;
+};
 
-    long int rx[10];
+typedef struct registers_s{
+    union reg_u rsp;
+    union reg_u rbp;
+    union reg_u rax;
+    union reg_u rbx;
+    union reg_u rcx;
+    union reg_u rdx;
+
+    union reg_u rx[10];
 
     int etp;
 }registers_t;
@@ -50,7 +71,7 @@ typedef struct instruction_s{
 
     union data{
         token_t token;
-        register_token_t reg;
+        struct reg_token_e reg;
         int num;
         void * pointer;
     } data;
@@ -63,7 +84,7 @@ extern bool_t newline;
 extern int * stack;
 extern var_t * text;
 
-extern registers_t register_struct;
+extern registers_t reg_struct;
 extern instruction_t instructions[INSTRUCTION_SIZE];
 
 static inline int print_error(char * prompt, int return_value){
