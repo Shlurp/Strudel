@@ -30,7 +30,7 @@
 typedef int bool_t;
 
 typedef enum token_type_e {TOKEN=1, REGISTER, NUM, SIZE}token_type_t;
-typedef enum token_e {PUSH=1, POP, MOV, JMP, CMP, JE, JNE, JG, JGE, JL, JLE, ADD, SUB, SET, IN, OUT}token_t;
+typedef enum token_e {PUSH=1, POP, MOV, LEA, JMP, CMP, JE, JNE, JG, JGE, JL, JLE, ADD, SUB, SET, IN, OUT}token_t;
 typedef enum register_token_e {RSP=NUM_REG_SIZE, RBP, RAX, RBX, RCX, RDX}register_token_t;
 typedef enum deref_size_e {BYTE=1, WORD, DWORD, QWORD}deref_size_t;
 typedef enum flag_e {ZF=1}flag_t;

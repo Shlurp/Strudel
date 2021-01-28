@@ -1,6 +1,6 @@
 #include "inter.h"
 
-char * tokens[] = {"PUSH", "POP", "MOV", "JMP", "CMP", "JE", "JNE", "JG", "JGE", "JL", "JLE", "ADD", "SUB", "SET"};
+char * tokens[] = {"PUSH", "POP", "MOV", "LEA", "JMP", "CMP", "JE", "JNE", "JG", "JGE", "JL", "JLE", "ADD", "SUB", "SET", "[", "]"};
 char * sizes[] = {"BYTE", "WORD", "DWORD", "QWORD"};
 char * regs[][5] = {{"RSP"}, 
                     {"RBP"}, 
@@ -16,9 +16,9 @@ static inline int get_reg(union reg_u ** reg){
         case RSP: *reg = &reg_struct.rsp; break; 
         case RBP: *reg = &reg_struct.rbp; break;
         case RAX: *reg = &reg_struct.rax; break; 
-        case RBX: *reg = &reg_struct.rax; break; 
-        case RCX: *reg = &reg_struct.rax; break; 
-        case RDX: *reg = &reg_struct.rax; break; 
+        case RBX: *reg = &reg_struct.rbx; break; 
+        case RCX: *reg = &reg_struct.rcx; break; 
+        case RDX: *reg = &reg_struct.rdx; break; 
         default: 
             if(0 <= instructions[reg_struct.etp].data.reg.reg && instructions[reg_struct.etp].data.reg.reg < NUM_REG_SIZE){ 
                 *reg = &reg_struct.rx[instructions[reg_struct.etp].data.reg.reg]; 
@@ -452,7 +452,7 @@ int execute_instructions(){
     reg_struct.etp = 0;
 
     switch(instructions[reg_struct.etp].data.token){
-        case PUSH:
+        case PUSH: {
             reg_struct.etp ++;
             if(NUM == instructions[reg_struct.etp].token_type){
                 *((int *)reg_struct.rsp.reg_64) = instructions[1].data.num;
@@ -478,8 +478,9 @@ int execute_instructions(){
 
             reg_struct.rsp.reg_64 += STACK_ELEMENT_SIZE;
             break;
+        }
 
-        case POP:
+        case POP: {
             reg_struct.etp ++;
             if(REGISTER != instructions[reg_struct.etp].token_type){
                 printf("\e[31;1mError\e[0m on line \e[31m%i\e[0m: expected register type\n", line);
@@ -508,8 +509,9 @@ int execute_instructions(){
             }
 
             break;
+        }
 
-        case MOV:
+        case MOV: {
             reg_struct.etp ++;
             if(SIZE == instructions[reg_struct.etp].token_type){
                 size = instructions[reg_struct.etp].data.size;
@@ -641,6 +643,42 @@ int execute_instructions(){
             }
 
             break;
+        }
+    
+        case LEA: {
+            reg_struct.etp ++;
+            if(REGISTER == instructions[reg_struct.etp].token_type){
+                return_value = get_reg(&r3);
+                if(-1 == return_value){
+                    goto cleanup;
+                }
+
+                i = reg_struct.etp;
+                reg_struct.etp ++;
+
+                if(TOKEN != instructions[reg_struct.etp].token_type || IN != instructions[reg_struct.etp].data.token){
+                    printf("\e[31mError\e[0m on line \e[31m%i\e[0m: LEA must be followed by a [ token\n", line);
+                    return_value = -1;
+                    goto cleanup;
+                }
+
+                temp = (long int)get_pointer_value();
+                if(-1 == temp){
+                    return_value = -1;
+                    goto cleanup;
+                }
+
+                return_value = set_reg_value(r3, temp, i);
+                if(-1 == return_value){
+                    goto cleanup;
+                }
+            }
+            else{
+                printf("\e[31mError\e[0m on line \e[31m%i\e[0m: expected register as first parameter\n", line);
+                return_value = -1;
+                goto cleanup;
+            }
+        }
     }
 
     reg_struct.etp ++;
@@ -677,7 +715,7 @@ int execute(char * filename){
             break;
         }
 
-        //print_instructions();
+        print_instructions();
         return_value = execute_instructions();
         if(-1 ==return_value){
             goto cleanup;

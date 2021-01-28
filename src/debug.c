@@ -57,41 +57,16 @@ void print_instructions(){
         if(TOKEN == instructions[i].token_type){
             fputs("TOKEN: ", stdout);
 
-            switch(instructions[i].data.token){
-                case PUSH:
-                    puts("PUSH");
-                    break;
-                case POP:
-                    puts("POP");
-                    break;
-                case MOV:
-                    puts("MOV");
-                    break;
-                case IN:
-                    puts("[");
-                    break;
-                case OUT:
-                    puts("]");
-                    break;
-                case ADD:
-                    puts("ADD");
-                    break;
-                case SUB:
-                    puts("SUB");
-                    break;
-                default:
-                    puts("\n\e[31mINVALID TOKEN\e[0m");
-                    goto cleanup; 
-            }
+            puts(tokens[instructions[i].data.token-1]);
         }
         else if(SIZE == instructions[i].token_type){
             fputs("SIZE: ", stdout);
 
             switch(instructions[i].data.size){
                 case BYTE: puts("BYTE"); break;
-                case WORD: puts("BYTE"); break;
-                case DWORD: puts("BYTE"); break;
-                case QWORD: puts("BYTE"); break;
+                case WORD: puts("WORD"); break;
+                case DWORD: puts("DWORD"); break;
+                case QWORD: puts("QWORD"); break;
                 default: puts("\e[31mINVALID SIZE\e[0m"); break;
             }
         }
@@ -108,8 +83,14 @@ void print_instructions(){
                 case RAX:
                     puts("RAX");
                     break;
+                case RBX:
+                    puts("RBX");
+                    break;
                 case RCX:
                     puts("RCX");
+                    break;
+                case RDX:
+                    puts("RDX");
                     break;
                 default:
                     if(0 <= instructions[i].data.reg.reg && instructions[i].data.reg.reg < NUM_REG_SIZE){
@@ -135,7 +116,7 @@ cleanup:
 void print_regs(){
     int i = 0;
 
-    printf("\e[1mRSP\e[0m: %li | \e[1mRBP\e[0m: %li | \e[1mRAX\e[0m: %li | \e[1mRCX\e[0m: %li\n", reg_struct.rsp.reg_64, reg_struct.rbp.reg_64, reg_struct.rax.reg_64, reg_struct.rcx.reg_64);
+    printf("\e[1mRSP\e[0m: %li | \e[1mRBP\e[0m: %li | \e[1mRAX\e[0m: %li | \e[1mRBX\e[0m: %li| \e[1mRCX\e[0m: %li| \e[1mRDX\e[0m: %li\n", reg_struct.rsp.reg_64, reg_struct.rbp.reg_64, reg_struct.rax.reg_64, reg_struct.rbx.reg_64, reg_struct.rcx.reg_64, reg_struct.rdx.reg_64);
 
     for(i=0; i<NUM_REG_SIZE; i++){
         printf("\e[1mr%i\e[0m: %li | ", i, reg_struct.rx[i].reg_64);
