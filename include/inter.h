@@ -5,6 +5,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define DEBUG_STR "\e[31mDEBUG\e[0m"
+#define DEBUG (puts(DEBUG_STR));
+
 #define STACK_SIZE (2048)
 #define TEXT_SIZE (1024)
 #define BUFFER_SIZE (512)
@@ -26,9 +29,10 @@
 
 typedef int bool_t;
 
-typedef enum token_type_e {TOKEN=1, REGISTER, NUM, POINTER}token_type_t;
+typedef enum token_type_e {TOKEN=1, REGISTER, NUM, SIZE}token_type_t;
 typedef enum token_e {PUSH=1, POP, MOV, JMP, CMP, JE, JNE, JG, JGE, JL, JLE, ADD, SUB, SET, IN, OUT}token_t;
 typedef enum register_token_e {RSP=NUM_REG_SIZE, RBP, RAX, RBX, RCX, RDX}register_token_t;
+typedef enum deref_size_e {BYTE=1, WORD, DWORD, QWORD}deref_size_t;
 typedef enum flag_e {ZF=1}flag_t;
 
 extern char * tokens[];
@@ -71,9 +75,9 @@ typedef struct instruction_s{
 
     union data{
         token_t token;
+        deref_size_t size;
         struct reg_token_e reg;
-        int num;
-        void * pointer;
+        long int num;
     } data;
 }instruction_t;
 

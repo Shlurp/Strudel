@@ -1,6 +1,7 @@
 #include "inter.h"
 
 char * tokens[] = {"PUSH", "POP", "MOV", "JMP", "CMP", "JE", "JNE", "JG", "JGE", "JL", "JLE", "ADD", "SUB", "SET"};
+char * sizes[] = {"BYTE", "WORD", "DWORD", "QWORD"};
 char * regs[][5] = {{"RSP"}, 
                     {"RBP"}, 
                     {"RAX", "EAX", "AX", "AH", "AL"}, 
@@ -157,6 +158,9 @@ int get_token_str(FILE * source, char ** token_str){
                 return_value = print_error("\e[31mGET_TOKEN_STR: Fread error\e[0m", -1);
                 goto cleanup;
             }
+            else if(feof(source)){
+                break;
+            }
 
             if('\n' == curr_char){
                 newline = true;
@@ -245,6 +249,15 @@ int get_next_instruction(FILE * source, instruction_t * instruction){
         }
     }
 
+    for(i=0; i<sizeof(sizes)/sizeof(sizes[0]); i++){
+        difference = strncmp(token_str, sizes[i], BUFFER_SIZE);
+        if(0 == difference){
+            instruction->token_type = SIZE;
+            instruction->data.size = i+1;
+            goto cleanup;
+        }
+    }
+
     for(i=0; i<sizeof(regs)/sizeof(regs[0]); i++){
         for(j=0; j<sizeof(regs[i])/sizeof(regs[i][0]); j++){
             if(NULL == regs[i][j]){
@@ -257,15 +270,16 @@ int get_next_instruction(FILE * source, instruction_t * instruction){
                 instruction->data.reg.reg = NUM_REG_SIZE + i;
                 
                 /**
+                 * This is the structure of a register for this program. In reality, it is flipped.
                  *                    R*X
                  *   _______________________________________
-                 *  /                           E*X         \
-                 *  |                    __________________ |
-                 *  |                   /            *X    \|
-                 *  |                   |          _______ ||
-                 *  |                   |         /       \||
+                 *  /       E*X                             \
+                 *  | __________________                    |
+                 *  |/                  \                   |
+                 *  || _______          |                   |
+                 *  ||/       \         |                   |
                  *  +----+----+----+----+----+----+----+----+
-                 *  |    |    |    |    |    |    | *H | *L |
+                 *  | *L | *H |    |    |    |    |    |    |
                  *  |    |    |    |    |    |    |    |    |
                  *  +----+----+----+----+----+----+----+----+
                  */
@@ -420,6 +434,7 @@ cleanup:
 
 int execute_instructions(){
     int return_value = 0;
+    int size = NONE;
     long int temp = 0;
     int i = 0;
     int * r1 = NULL;
@@ -434,14 +449,15 @@ int execute_instructions(){
         goto cleanup;
     }
 
-    switch(instructions[0].data.token){
+    reg_struct.etp = 0;
+
+    switch(instructions[reg_struct.etp].data.token){
         case PUSH:
-            if(NUM == instructions[1].token_type){
+            reg_struct.etp ++;
+            if(NUM == instructions[reg_struct.etp].token_type){
                 *((int *)reg_struct.rsp.reg_64) = instructions[1].data.num;
             }
-            else if(REGISTER == instructions[1].token_type){
-                reg_struct.etp = 1;
-
+            else if(REGISTER == instructions[reg_struct.etp].token_type){
                 return_value = get_reg(&temp_register);
                 if(-1 == return_value){
                     goto cleanup;
@@ -464,7 +480,8 @@ int execute_instructions(){
             break;
 
         case POP:
-            if(REGISTER != instructions[1].token_type){
+            reg_struct.etp ++;
+            if(REGISTER != instructions[reg_struct.etp].token_type){
                 printf("\e[31;1mError\e[0m on line \e[31m%i\e[0m: expected register type\n", line);
                 return_value = -1;
                 goto cleanup;
@@ -472,14 +489,14 @@ int execute_instructions(){
 
             reg_struct.rsp.reg_64 -= STACK_ELEMENT_SIZE;
 
-            reg_struct.etp = 1;
-
             return_value = get_reg(&temp_register);
             if(-1 == return_value){
                 goto cleanup;
             }
 
-            switch(instructions[1].data.reg.size){
+            i = instructions[reg_struct.etp].data.reg.index;
+
+            switch(instructions[reg_struct.etp].data.reg.size){
                 case R_REG_SIZE: temp_register->reg_64 = *(long int *)reg_struct.rsp.reg_64; break;
                 case E_REG_SIZE: temp_register->reg_32[i] = *(long int *)reg_struct.rsp.reg_64; break;
                 case X_REG_SIZE: temp_register->reg_16[i] = *(long int *)reg_struct.rsp.reg_64; break;
@@ -493,9 +510,22 @@ int execute_instructions(){
             break;
 
         case MOV:
-            if(TOKEN == instructions[1].token_type && IN == instructions[1].data.token){        //MOV [p1] ____
+            reg_struct.etp ++;
+            if(SIZE == instructions[reg_struct.etp].token_type){
+                size = instructions[reg_struct.etp].data.size;
+
+                reg_struct.etp ++;
+            }
+
+            if(TOKEN == instructions[reg_struct.etp].token_type && IN == instructions[reg_struct.etp].data.token){        //MOV [p1] ____
+                if(0 == size){
+                    printf("\e[31mError\e[0m on line \e[31m%i\e[0m: Expected size token\n", line);
+                    return_value = -1;
+                    goto cleanup;
+                }
+
                 //Get p1 
-                reg_struct.etp = 2;
+                reg_struct.etp ++;
                 r1 = get_pointer_value();
                 if(FAIL == r1){
                     puts("EXECUTE_INSTRUCTIONS: Get_pointer_value error");
@@ -512,8 +542,14 @@ int execute_instructions(){
                         return_value = -1;
                         goto cleanup;
                     }
-
-                    *r1 = *r2;
+                    
+                    switch(size){
+                        case BYTE: *(char *)r1 = *(char *)r2; break;
+                        case WORD: *(short int *)r1 = *(short int *)r2; break;
+                        case DWORD: *(int *)r1 = *(int *)r2; break;
+                        case QWORD: *(long int *)r1 = *(long int *)r2; break;
+                        default: printf("\e[31mError\e[0m on line %i: Invalid size value", line); return_value = -1; goto cleanup;
+                    }
                 }
                 else if(REGISTER == instructions[reg_struct.etp].token_type){      //MOV [p1] reg (eg. MOV [rax] rcx)
                     return_value = get_reg(&temp_register);
@@ -526,29 +562,43 @@ int execute_instructions(){
                         goto cleanup;
                     }
 
-                    *r1 = temp;
+                    switch(size){
+                        case BYTE: *(char *)r1 = (char)temp; break;
+                        case WORD: *(short int *)r1 = (short int)temp; break;
+                        case DWORD: *(int *)r1 = (int)temp; break;
+                        case QWORD: *(long int *)r1 = (long int)temp; break;
+                        default: printf("\e[31mError\e[0m on line %i: Invalid size value", line); return_value = -1; goto cleanup;
+                    }
                 }
                 else if(NUM == instructions[reg_struct.etp].token_type){        //MOV [p1] NUM [eg. MOV [rax] 121]
-                    r2 = get_pointer_value();
-                    if(FAIL == r1){
-                        puts("EXECUTE_INSTRUCTIONS: Get_pointer_value error");
-                        return_value = -1;
-                        goto cleanup;
-                    }
+                    temp = instructions[reg_struct.etp].data.num;
 
-                    *(int *)r1 = (long int)r2;
+                    switch(size){
+                        case BYTE: *(char *)r1 = (char)temp; break;
+                        case WORD: *(short int *)r1 = (short int)temp; break;
+                        case DWORD: *(int *)r1 = (int)temp; break;
+                        case QWORD: *(long int *)r1 = (long int)temp; break;
+                        default: printf("\e[31mError\e[0m on line %i: Invalid size value", line); return_value = -1; goto cleanup;
+                    }
                 }
             }
-            else if(REGISTER == instructions[1].token_type){        //MOV reg ____
-                reg_struct.etp = 1;
-                i = 1;
+            else if(REGISTER == instructions[reg_struct.etp].token_type){        //MOV reg ____
+                i = reg_struct.etp;
                 return_value = get_reg(&r3);
                 if(-1 == return_value){
                     goto cleanup;
                 }
 
-                if(TOKEN == instructions[2].token_type && IN == instructions[2].data.token){        //MOV reg [p1] (eg. MOV rax [rbp + 16])
-                    reg_struct.etp = 3;
+                reg_struct.etp ++;
+
+                if(TOKEN == instructions[reg_struct.etp].token_type && IN == instructions[reg_struct.etp].data.token){        //MOV reg [p1] (eg. MOV rax [rbp + 16])
+                    if(0 == size){
+                        printf("\e[31mError\e[0m on line \e[31m%i\e[0m: Expected size token\n", line);
+                        return_value = -1;
+                        goto cleanup;
+                    }
+
+                    reg_struct.etp ++;
                     r1 = get_pointer_value();
                     if(FAIL == r1){
                         puts("EXECUTE_INSTRUCTIONS: Get_pointer_value error");
@@ -556,13 +606,18 @@ int execute_instructions(){
                         goto cleanup;
                     }
 
-                    return_value = set_reg_value(r3, *(long int *)r1, i);
+                    switch(size){
+                        case BYTE: temp = *(char *)r1; break;
+                        case WORD: temp = *(short int *)r1; break;
+                        case DWORD: temp = *(int *)r1; break;
+                        case QWORD: temp = *(long int *)r1; break;
+                    }
+                    return_value = set_reg_value(r3, temp, i);
                     if(-1 == return_value){
                         goto cleanup;
                     }
                 }
-                else if(REGISTER == instructions[2].token_type){    //MOV reg1 reg2 (eg. MOV rax rcx)
-                    reg_struct.etp = 2;
+                else if(REGISTER == instructions[reg_struct.etp].token_type){    //MOV reg1 reg2 (eg. MOV rax rcx)
                     return_value = get_reg(&r4);
                     if(-1 == return_value){
                         goto cleanup;
@@ -578,22 +633,23 @@ int execute_instructions(){
                         goto cleanup;
                     }
                 }
-                else if(NUM == instructions[2].token_type){     
-                    reg_struct.etp = 2;
+                else if(NUM == instructions[reg_struct.etp].token_type){     //MOV reg1 NUM (eg. MOV rax 121)
+                    temp = instructions[reg_struct.etp].data.num;
 
-                    r1 = get_pointer_value();
-                    if(FAIL == r1){
-                        puts("EXECUTE_INSTRUCTIONS: Get_pointer_value error");
-                        return_value = -1;
-                        goto cleanup;
-                    }
-                    //printf("VALUE: %li\n", (long int)r1);
-
-                    return_value = set_reg_value(r3, (long int)r1, i);
+                    return_value = set_reg_value(r3, temp, i);
                 }
             }
 
             break;
+    }
+
+    reg_struct.etp ++;
+
+    for(reg_struct.etp; reg_struct.etp < INSTRUCTION_SIZE; reg_struct.etp++){
+        if(instructions[reg_struct.etp].token_type != NONE){
+            printf("\e[33mWarning\e[0m on line \e[33m%i\e[0m: excess tokens (index: \e[33m%i\e[0m)\n(Excess tokens are ignored)\n", line, reg_struct.etp);
+            break;
+        }
     }
 
 cleanup:
@@ -616,6 +672,9 @@ int execute(char * filename){
         return_value = get_next_sequence(source);
         if(-1 == return_value){
             goto cleanup;
+        }
+        if(feof(source)){
+            break;
         }
 
         //print_instructions();

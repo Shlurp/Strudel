@@ -45,8 +45,8 @@ void print_instructions(){
             case NUM:
                 puts("NUM");
                 break;
-            case POINTER:
-                puts("POINTER");
+            case SIZE:
+                puts("SIZE");
                 break;
 
             default:
@@ -84,6 +84,17 @@ void print_instructions(){
                     goto cleanup; 
             }
         }
+        else if(SIZE == instructions[i].token_type){
+            fputs("SIZE: ", stdout);
+
+            switch(instructions[i].data.size){
+                case BYTE: puts("BYTE"); break;
+                case WORD: puts("BYTE"); break;
+                case DWORD: puts("BYTE"); break;
+                case QWORD: puts("BYTE"); break;
+                default: puts("\e[31mINVALID SIZE\e[0m"); break;
+            }
+        }
         else if(REGISTER == instructions[i].token_type){
             fputs("REGISTER: ", stdout);
 
@@ -111,7 +122,7 @@ void print_instructions(){
             }
         }
         else{
-            printf("DATA: %i\n", instructions[i].data.num);
+            printf("DATA: %li\n", instructions[i].data.num);
         }
 
         putchar('\n');
