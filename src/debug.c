@@ -7,6 +7,7 @@ int * stack = NULL;
 var_t * text = NULL;
 registers_t reg_struct = {0};
 instruction_t instructions[INSTRUCTION_SIZE] = {0};
+jump_offset_t * jump_offsets[BUFFER_SIZE] = {0};
 
 int init(){
     int return_value = 0;
@@ -48,6 +49,9 @@ void print_instructions(){
             case SIZE:
                 puts("SIZE");
                 break;
+            case STRING:
+                puts("STRING");
+                break;
 
             default:
                 puts("\n\e[31mINVALID TOKEN TYPE\e[0m");
@@ -74,6 +78,9 @@ void print_instructions(){
             fputs("REGISTER: ", stdout);
 
             switch(instructions[i].data.reg.reg){
+                case RIP:   
+                    puts("RIP");
+                    break;
                 case RSP:
                     puts("RSP");
                     break;
@@ -102,6 +109,10 @@ void print_instructions(){
                     }
             }
         }
+        else if(STRING == instructions[i].token_type){
+            printf("TAG: %s\n", instructions[i].data.str);
+        }
+        
         else{
             printf("DATA: %li\n", instructions[i].data.num);
         }
@@ -116,7 +127,7 @@ cleanup:
 void print_regs(){
     int i = 0;
 
-    printf("\e[1mRSP\e[0m: %li | \e[1mRBP\e[0m: %li | \e[1mRAX\e[0m: %li | \e[1mRBX\e[0m: %li| \e[1mRCX\e[0m: %li| \e[1mRDX\e[0m: %li\n", reg_struct.rsp.reg_64, reg_struct.rbp.reg_64, reg_struct.rax.reg_64, reg_struct.rbx.reg_64, reg_struct.rcx.reg_64, reg_struct.rdx.reg_64);
+    printf("\e[1mRIP\e[0m: %li | \e[1mRSP\e[0m: %li | \e[1mRBP\e[0m: %li | \e[1mRAX\e[0m: %li | \e[1mRBX\e[0m: %li| \e[1mRCX\e[0m: %li| \e[1mRDX\e[0m: %li\n", reg_struct.rip.reg_64, reg_struct.rsp.reg_64, reg_struct.rbp.reg_64, reg_struct.rax.reg_64, reg_struct.rbx.reg_64, reg_struct.rcx.reg_64, reg_struct.rdx.reg_64);
 
     for(i=0; i<NUM_REG_SIZE; i++){
         printf("\e[1mr%i\e[0m: %li | ", i, reg_struct.rx[i].reg_64);

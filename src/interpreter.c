@@ -1,100 +1,16 @@
 #include "inter.h"
 
-char * tokens[] = {"PUSH", "POP", "MOV", "LEA", "JMP", "CMP", "JE", "JNE", "JG", "JGE", "JL", "JLE", "ADD", "SUB", "SET", "[", "]"};
+char * tokens[] = {"PUSH", "POP", "MOV", "LEA", "JMP", "CALL", "CMP", "JE", "JNE", "JG", "JGE", "JL", "JLE", "ADD", "SUB", "TAG", "SET", "[", "]", "END"};
 char * sizes[] = {"BYTE", "WORD", "DWORD", "QWORD"};
-char * regs[][5] = {{"RSP"}, 
+char * regs[][5] = {{"RIP"},
+                    {"RSP"}, 
                     {"RBP"}, 
                     {"RAX", "EAX", "AX", "AH", "AL"}, 
                     {"RBX", "EBX", "BX", "BH", "BL"}, 
                     {"RCX", "ECX", "CX", "CH", "CL"}, 
                     {"RDX", "EDX", "DX", "DH", "DL"}};
 
-static inline int get_reg(union reg_u ** reg){
-    int return_value = 0;
-
-    switch(instructions[reg_struct.etp].data.reg.reg){ 
-        case RSP: *reg = &reg_struct.rsp; break; 
-        case RBP: *reg = &reg_struct.rbp; break;
-        case RAX: *reg = &reg_struct.rax; break; 
-        case RBX: *reg = &reg_struct.rbx; break; 
-        case RCX: *reg = &reg_struct.rcx; break; 
-        case RDX: *reg = &reg_struct.rdx; break; 
-        default: 
-            if(0 <= instructions[reg_struct.etp].data.reg.reg && instructions[reg_struct.etp].data.reg.reg < NUM_REG_SIZE){ 
-                *reg = &reg_struct.rx[instructions[reg_struct.etp].data.reg.reg]; 
-                break; 
-            } 
-            else{ 
-                printf("\e[31;1mError\e[0m on line \e[31m%i\e[0m: unexpected register value\n", line); 
-                return_value = -1; 
-                goto cleanup;
-            } 
-    }
-
-cleanup:
-    return return_value;
-}
-
-static inline long int get_reg_value(union reg_u * reg, long int * value){
-    long int return_value = 0;
-    int i = 0;
-
-    i = instructions[reg_struct.etp].data.reg.index;
-
-    if(instructions[reg_struct.etp].data.reg.size != R_REG_SIZE){
-        for(int j=0; j<8; j++){
-            printf("%i\n", reg->reg_8[j]);
-        }
-    }
-
-    switch(instructions[reg_struct.etp].data.reg.size){
-        case R_REG_SIZE: *value = reg->reg_64; break;
-        case E_REG_SIZE: *value = reg->reg_32[i]; break;
-        case X_REG_SIZE: *value = reg->reg_16[i]; break;
-        case HL_REG_SIZE: *value = reg->reg_8[i]; break;
-        default:
-            printf("\e[31mError\e[0m invalid register size on line \e[31m%i\e[0m", line);
-            return_value = -1;
-            goto cleanup;
-    }
-
-cleanup:
-    return return_value;
-}
-
-static inline int set_reg_value(union reg_u * reg, long int value, int i){
-    int return_value = 0;
-    int index = 0;
-
-    index = instructions[i].data.reg.index;
-
-    switch(instructions[i].data.reg.size){
-        case R_REG_SIZE: reg->reg_64 = value; break;
-        case E_REG_SIZE: reg->reg_32[index] = value; break;
-        case X_REG_SIZE: reg->reg_16[index] = value; break;
-        case HL_REG_SIZE: reg->reg_8[index] = value; break;
-        default:
-            printf("\e[31mError\e[0m invalid register size on line \e[31m%i\e[0m\n", line);
-            return_value = -1;
-            goto cleanup;
-    }
-
-cleanup:
-    return return_value;
-}
-
-/**
- * djb2 hash algorithm by Dan Bernstein: http://www.cse.yorku.ca/~oz/hash.html
- */
-unsigned long hash(unsigned char *str){
-    unsigned long hash = 5381;
-    int c = 0;
-
-    while (c = *str++)
-        hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
-
-    return hash;
-}
+bool_t tag = false;
 
 int get_token_str(FILE * source, char ** token_str){
     int return_value = 0;
@@ -104,7 +20,7 @@ int get_token_str(FILE * source, char ** token_str){
     char buffer[BUFFER_SIZE] = {0};
 
     while(true){
-        return_value = fread(&curr_char, sizeof(curr_char), 1, source);
+        return_value = rread(&curr_char, sizeof(curr_char), 1, source);
         if(0 == return_value && !feof(source)){
             return_value = print_error("\e[31mGET_TOKEN_STR: Fread error\e[0m", -1);
             goto cleanup;
@@ -119,7 +35,7 @@ int get_token_str(FILE * source, char ** token_str){
         }
         else if(';' == curr_char){
             while('\n' != curr_char && !feof(source)){
-                return_value = fread(&curr_char, sizeof(curr_char), 1, source);
+                return_value = rread(&curr_char, sizeof(curr_char), 1, source);
                 if(0 == return_value && !feof(source)){
                     return_value = print_error("\e[31mGET_TOKEN_STR: Fread error\e[0m", -1);
                     goto cleanup;
@@ -140,7 +56,7 @@ int get_token_str(FILE * source, char ** token_str){
         }
 
         if(']' == curr_char && !first){
-            return_value = fseek(source, -1, SEEK_CUR);
+            return_value = rseek(source, -1, SEEK_CUR);
             if(-1 == return_value){
                 print_error("\e[31mGET_TOKEN_STR: lseek error\e[0m", 0);
                 goto cleanup;
@@ -153,7 +69,7 @@ int get_token_str(FILE * source, char ** token_str){
         buffer[buffer_pointer] = curr_char;
 
         if('[' == curr_char || ']' == curr_char){
-            return_value = fread(&curr_char, sizeof(curr_char), 1, source);
+            return_value = rread(&curr_char, sizeof(curr_char), 1, source);
             if(0 == return_value && !feof(source)){
                 return_value = print_error("\e[31mGET_TOKEN_STR: Fread error\e[0m", -1);
                 goto cleanup;
@@ -167,7 +83,7 @@ int get_token_str(FILE * source, char ** token_str){
                 line ++;
             }
             else{
-                return_value = fseek(source, -1, SEEK_CUR);
+                return_value = rseek(source, -1, SEEK_CUR);
                 if(-1 == return_value){
                     print_error("\e[31mGET_TOKEN_STR: lseek error\e[0m", 0);
                     goto cleanup;
@@ -245,6 +161,11 @@ int get_next_instruction(FILE * source, instruction_t * instruction){
         if(0 == difference){
             instruction->token_type = TOKEN;
             instruction->data.token = i+1;
+
+            if((TAG == i+1) || (JMP == i+1) || (CALL == i+1)){
+                tag = true;
+            }
+
             goto cleanup;
         }
     }
@@ -313,25 +234,37 @@ int get_next_instruction(FILE * source, instruction_t * instruction){
         }
     }
 
-    if('-' == token_str[0]){
-        i = 1;
-    }
-    else{
-        i = 0;
-    }
-    for(i; i<token_length; i++){
-        if(token_str[i] < '0' || token_str[i] > '9'){
-            printf("\e[31;1mError\e[0m on line \e[31m%i\e[0m on token: \e[31m%s\e[0m on index: \e[31m%i\e[0m\nExiting...\n", line+1, token_str, i);
-            return_value = -1;
-            goto cleanup;
+    if(!tag){
+        if('-' == token_str[0]){
+            i = 1;
+        }
+        else{
+            i = 0;
+        }
+        for(i; i<token_length; i++){
+            if(token_str[i] < '0' || token_str[i] > '9'){
+                printf("\e[31;1mError\e[0m on line \e[31m%i\e[0m on token: \e[31m%s\e[0m on index: \e[31m%i\e[0m\nExiting...\n", line+1, token_str, i);
+                return_value = -1;
+                goto cleanup;
+            }
+
+            instruction->token_type = NUM;
+            instruction->data.num = instruction->data.num * 10 + token_str[i] - '0';
         }
 
-        instruction->token_type = NUM;
-        instruction->data.num = instruction->data.num * 10 + token_str[i] - '0';
+        if('-' == token_str[0]){
+            instruction->data.num *= -1;
+        }
     }
-
-    if('-' == token_str[0]){
-        instruction->data.num *= -1;
+    else{
+        instruction->token_type = STRING;
+        instruction->data.str = calloc(token_length+1, sizeof(char));
+        if(NULL == instruction->data.str){
+            return_value = print_error("\e[31mGET_NEXT_INSTRUCTION\e[0m: calloc error", -1);
+            goto cleanup;
+        }
+        memcpy(instruction->data.str, token_str, token_length);
+        tag = false;
     }
 
 cleanup:
@@ -432,7 +365,7 @@ cleanup:
     return (int *)return_value;
 }
 
-int execute_instructions(){
+int execute_instructions(FILE * source){
     int return_value = 0;
     int size = NONE;
     long int temp = 0;
@@ -445,6 +378,11 @@ int execute_instructions(){
 
     if(TOKEN != instructions[0].token_type){
         printf("\e[31;1mError\e[0m on line \e[31m%i\e[0m: expected token\n", line);
+        return_value = -1;
+        goto cleanup;
+    }
+
+    if(END == instructions[0].data.token){
         return_value = -1;
         goto cleanup;
     }
@@ -678,6 +616,88 @@ int execute_instructions(){
                 return_value = -1;
                 goto cleanup;
             }
+
+            break;
+        }
+    
+        case TAG: {
+            reg_struct.etp ++;
+            if(STRING != instructions[reg_struct.etp].token_type){
+                printf("\e[31mError\e[0m on line \e[31m%i\e[0m: expected string\n", line);
+                return_value = -1;
+                goto cleanup;
+            }
+
+            temp = ftell(source);
+            if(-1 == temp){
+                return_value = print_error("\e[31mEXECUTE_INSTRUCTIONS\e[0m: ftell error", -1);
+                goto cleanup;
+            }
+
+
+            return_value = insert_jump_offset(instructions[reg_struct.etp].data.str, (int)temp);
+            if(-1 == return_value){
+                goto cleanup;
+            }
+
+            tag = false;
+
+            break;
+        }
+
+        case JMP: {
+            reg_struct.etp ++;
+            if(STRING != instructions[reg_struct.etp].token_type){
+                printf("\e[31mError\e[0m on line \e[31m%i\e[0m: expected string\n", line);
+                return_value = -1;
+                goto cleanup;
+            }
+
+            temp = get_jump_offset(instructions[reg_struct.etp].data.str);
+            if(-1 == temp){
+                temp = find_tag(source, instructions[reg_struct.etp].data.str);
+                if(-1 == temp){
+                    return_value = -1;
+                    goto cleanup;
+                }
+            }
+
+            return_value = rseek(source, temp, SEEK_SET);
+            if(-1 == return_value){
+                return_value = print_error("\e[31mEXECUTE_INSTRUCTIONS\e[0m: Fseek error", -1);
+                goto cleanup;
+            }
+
+            break;
+        }
+
+        case CALL: {
+            reg_struct.etp ++;
+            if(STRING != instructions[reg_struct.etp].token_type){
+                printf("\e[31mError\e[0m on line \e[31m%i\e[0m: expected string\n", line);
+                return_value = -1;
+                goto cleanup;
+            }
+
+            temp = get_jump_offset(instructions[reg_struct.etp].data.str);
+            if(-1 == temp){
+                temp = find_tag(source, instructions[reg_struct.etp].data.str);
+                if(-1 == temp){
+                    return_value = -1;
+                    goto cleanup;
+                }
+            }
+
+            *(long int *)reg_struct.rsp.reg_64 = reg_struct.rip.reg_64;
+            reg_struct.rsp.reg_64 += STACK_ELEMENT_SIZE;
+
+            return_value = rseek(source, temp, SEEK_SET);
+            if(-1 == return_value){
+                return_value = print_error("\e[31mEXECUTE_INSTRUCTIONS\e[0m: Fseek error", -1);
+                goto cleanup;
+            }
+
+            break;
         }
     }
 
@@ -696,6 +716,7 @@ cleanup:
 
 int execute(char * filename){
     int return_value = 0;
+    off_t entry_off = 0;
     FILE * source = NULL;
     long int i = 0;
     int j = 0;
@@ -706,17 +727,26 @@ int execute(char * filename){
         goto cleanup;
     }
 
+    entry_off = find_tag(source, ENTRY_POINT);
+    if(-1 == entry_off){
+        return_value = -1;
+        goto cleanup;
+    }
+
+    return_value = rseek(source, entry_off, SEEK_SET);
+    if(-1 == return_value){
+        return_value = print_error("\e[31mEXECUTE: Fseek error\e[0m", -1);
+        goto cleanup;
+    }
+
     while(!feof(source)){
         return_value = get_next_sequence(source);
         if(-1 == return_value){
             goto cleanup;
         }
-        if(feof(source)){
-            break;
-        }
 
         print_instructions();
-        return_value = execute_instructions();
+        return_value = execute_instructions(source);
         if(-1 ==return_value){
             goto cleanup;
         }
@@ -750,6 +780,8 @@ int execute(char * filename){
             putchar('\n');
         }
         putchar('\n');
+
+        //sleep(1);
     }
 
 cleanup:
