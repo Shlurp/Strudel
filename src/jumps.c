@@ -29,7 +29,8 @@ int insert_jump_offset(char * str, off_t offset){
         goto cleanup;
     }
 
-    node->tag = str;
+    node->tag = calloc(strnlen(str, BUFFER_SIZE) + 1, sizeof(char));
+    memcpy(node->tag, str, strnlen(str, BUFFER_SIZE));
     node->offset = offset;
 
     next = jump_offsets[index];
@@ -147,6 +148,7 @@ off_t find_tag(FILE * source, char * str){
             }
 
             diff = strncmp(instruction.data.str, str, BUFFER_SIZE);
+            free(instruction.data.str);
         }
         else{
             diff = -1;
@@ -162,4 +164,33 @@ off_t find_tag(FILE * source, char * str){
 
 cleanup:
     return tag_offset;
+}
+
+int jump(FILE * source){
+    int return_value = 0;
+    long int temp = 0;
+
+    if(STRING != instructions[reg_struct.etp].token_type){
+        printf("\e[31mError\e[0m on line \e[31m%i\e[0m: expected string\n", get_curr_line(source));
+        return_value = -1;
+        goto cleanup;
+    }
+
+    temp = get_jump_offset(instructions[reg_struct.etp].data.str);
+    if(-1 == temp){
+        temp = find_tag(source, instructions[reg_struct.etp].data.str);
+        if(-1 == temp){
+            return_value = -1;
+            goto cleanup;
+        }
+    }
+
+    return_value = rseek(source, temp, SEEK_SET);
+    if(-1 == return_value){
+        return_value = print_error("\e[31mEXECUTE_INSTRUCTIONS\e[0m: Fseek error", -1);
+        goto cleanup;
+    }
+
+cleanup:
+    return return_value;
 }

@@ -14,4 +14,17 @@ PUSH 200        ; Pushes 200 onto the stack
 LEA RSP [RSP - 8] ; Moves RSP back 8
 POP RBP     ; Gets the frame pointer
 POP RIP     ; The instruction pointer was pushed onto the stack by CALL, and now this returns to the calling func
-; Run: $dum -sir test.asm
+;
+; This is the same as:
+;
+; void fun(){
+;   int x = 200;    
+; }
+; 
+; void main(){
+;   int x = 100;
+;   fun();
+;   int y = 999; 
+; }
+;
+; Run: $dum -sir demos/subroutine.asm

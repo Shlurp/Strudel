@@ -34,19 +34,24 @@
 typedef int bool_t;
 
 typedef enum token_type_e {TOKEN=1, REGISTER, NUM, SIZE, STRING}token_type_t;
-typedef enum token_e {PUSH=1, POP, MOV, LEA, JMP, CALL, CMP, JE, JNE, JG, JGE, JL, JLE, ADD, SUB, TAG, SET, IN, OUT, END}token_t;
+typedef enum token_e {PUSH=1, POP, MOV, LEA, CMP, JMP, CALL, JE, JNE, JG, JGE, JL, JLE, ADD, SUB, TAG, SET, IN, OUT, END}token_t;
 typedef enum register_token_e {RIP=NUM_REG_SIZE, RSP, RBP, RAX, RBX, RCX, RDX}register_token_t;
 typedef enum deref_size_e {BYTE=1, WORD, DWORD, QWORD}deref_size_t;
-typedef enum flag_e {ZF=1}flag_t;
 
 extern char * tokens[];
 extern char * regs[][5];
 
 typedef struct flags_s{
-    char print_stack : 1;
-    char print_instructions : 1;
-    char print_regs : 1;
+    unsigned char zf : 1;
+    unsigned char sf : 1;
 }flags_t;
+
+typedef struct func_flags_s{
+    unsigned char print_stack : 1;
+    unsigned char print_instructions : 1;
+    unsigned char print_regs : 1;
+    unsigned char print_flags : 1;
+}func_flags_t;
 
 union reg_u{
     long int reg_64;
@@ -100,7 +105,8 @@ typedef struct instruction_s{
     } data;
 }instruction_t;
 
-extern int FLAGS;
+
+extern flags_t flags;
 extern bool_t newline;
 
 extern int * stack;
@@ -129,12 +135,14 @@ void print_help();
 void print_instructions();
 void print_regs();
 void print_stack();
+void print_flags();
 int get_curr_line(FILE * source);
 
 unsigned long hash(unsigned char * str);
 int insert_jump_offset(char * str, off_t offset);
 off_t get_jump_offset(char * str);
 off_t find_tag(FILE * source, char * str);
+int jump(FILE * source);
 
 static inline int get_reg(union reg_u ** reg){
     int return_value = 0;
@@ -229,4 +237,23 @@ static inline off_t rseek(FILE * source, off_t offset, int whence){
     reg_struct.rip.reg_64 = ftell(source);
 
     return return_value;
+}
+
+static inline void free_jump_offsets(){
+    int i = 0;
+    jump_offset_t * node = NULL;
+    jump_offset_t * next_node = NULL;
+
+    for(i=0; i<BUFFER_SIZE; i++){
+        node = jump_offsets[i];
+
+        while(NULL != node){
+            next_node = node->next;
+            if(NULL != node->tag){
+                free(node->tag);
+            }
+            free(node);
+            node = next_node;
+        }
+    }
 }

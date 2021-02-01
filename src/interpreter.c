@@ -2,7 +2,7 @@
 
 // Doesnt work
 
-char * tokens[] = {"PUSH", "POP", "MOV", "LEA", "JMP", "CALL", "CMP", "JE", "JNE", "JG", "JGE", "JL", "JLE", "ADD", "SUB", "TAG", "SET", "[", "]", "END"};
+char * tokens[] = {"PUSH", "POP", "MOV", "LEA", "CMP", "JMP", "CALL", "JE", "JNE", "JG", "JGE", "JL", "JLE", "ADD", "SUB", "TAG", "SET", "[", "]", "END"};
 char * sizes[] = {"BYTE", "WORD", "DWORD", "QWORD"};
 char * regs[][5] = {{"RIP"},
                     {"RSP"}, 
@@ -160,7 +160,7 @@ int get_next_instruction(FILE * source, instruction_t * instruction){
             instruction->token_type = TOKEN;
             instruction->data.token = i+1;
 
-            if((TAG == i+1) || (JMP == i+1) || (CALL == i+1)){
+            if((JMP <= i+1 && i+1 <= JLE) || (TAG == i+1)){
                 tag = true;
             }
 
@@ -367,6 +367,7 @@ int execute_instructions(FILE * source){
     int return_value = 0;
     int size = NONE;
     long int temp = 0;
+    long int temp1 = 0;
     int i = 0;
     int * r1 = NULL;
     int * r2 = NULL;
@@ -650,24 +651,8 @@ int execute_instructions(FILE * source){
 
         case JMP: {
             reg_struct.etp ++;
-            if(STRING != instructions[reg_struct.etp].token_type){
-                printf("\e[31mError\e[0m on line \e[31m%i\e[0m: expected string\n", get_curr_line(source));
-                return_value = -1;
-                goto cleanup;
-            }
-
-            temp = get_jump_offset(instructions[reg_struct.etp].data.str);
-            if(-1 == temp){
-                temp = find_tag(source, instructions[reg_struct.etp].data.str);
-                if(-1 == temp){
-                    return_value = -1;
-                    goto cleanup;
-                }
-            }
-
-            return_value = rseek(source, temp, SEEK_SET);
+            return_value = jump(source);
             if(-1 == return_value){
-                return_value = print_error("\e[31mEXECUTE_INSTRUCTIONS\e[0m: Fseek error", -1);
                 goto cleanup;
             }
 
@@ -702,7 +687,130 @@ int execute_instructions(FILE * source){
 
             break;
         } 
-    
+
+        case CMP: {
+            reg_struct.etp ++;
+
+            if(REGISTER == instructions[reg_struct.etp].token_type){
+                return_value = get_reg(&r3);
+                if(-1 == return_value){
+                    goto cleanup;
+                }
+
+                return_value = get_reg_value(r3, &temp);
+                if(-1 == return_value){
+                    goto cleanup;
+                }
+            }
+            else if(NUM == instructions[reg_struct.etp].token_type){
+                temp = instructions[reg_struct.etp].data.num;
+            }
+            else{
+                printf("\e[31mError\e[0m on line \e[31m%i\e[0m: expected register or integral type\n", get_curr_line(source));
+                return_value = -1;
+                goto cleanup;
+            }
+
+            reg_struct.etp ++;
+
+            if(REGISTER == instructions[reg_struct.etp].token_type){
+                return_value = get_reg(&r3);
+                if(-1 == return_value){
+                    goto cleanup;
+                }
+
+                return_value = get_reg_value(r3, &temp1);
+                if(-1 == return_value){
+                    goto cleanup;
+                }
+            }
+            else if(NUM == instructions[reg_struct.etp].token_type){
+                temp1 = instructions[reg_struct.etp].data.num;
+            }
+            else{
+                printf("\e[31mError\e[0m on line \e[31m%i\e[0m: expected register or integral type\n", get_curr_line(source));
+                return_value = -1;
+                goto cleanup;
+            }
+
+            temp -= temp1;
+
+            if(0 == temp){
+                flags.zf = 1;
+                flags.sf = 0;
+            }
+            else if(temp > 0){
+                flags.zf = 0;
+                flags.sf = 0;
+            }
+            else{
+                flags.zf = 0;
+                flags.sf = 1;
+            }
+
+            break;
+        }
+        
+        case JE: {
+            reg_struct.etp ++;
+            if(flags.zf){
+                return_value = jump(source);
+                if(-1 == return_value){
+                    goto cleanup;
+                }
+            }
+
+            break;
+        }
+
+        case JLE: {
+            reg_struct.etp ++;
+            if(flags.zf || flags.sf){
+                return_value = jump(source);
+                if(-1 == return_value){
+                    goto cleanup;
+                }
+            }
+
+            break;
+        }
+
+        case JGE: {
+            reg_struct.etp ++;
+            if(flags.zf || !flags.sf){
+                return_value = jump(source);
+                if(-1 == return_value){
+                    goto cleanup;
+                }
+            }
+
+            break;
+        }
+
+        case JL: {
+            reg_struct.etp ++;
+            if(!flags.zf && flags.sf){
+                return_value = jump(source);
+                if(-1 == return_value){
+                    goto cleanup;
+                }
+            }
+
+            break;
+        }
+
+        case JG: {
+            reg_struct.etp ++;
+            if(!flags.zf && !flags.sf){
+                return_value = jump(source);
+                if(-1 == return_value){
+                    goto cleanup;
+                }
+            }
+
+            break;
+        }
+        
         default: printf("\e[33mWarning\e[0m on line \e[33m%i\e[0m: unsupported token. (These may be added in later versions)\n", get_curr_line(source)); goto cleanup;
     }
 
@@ -720,8 +828,9 @@ cleanup:
     return return_value;
 }
 
-int execute(char * filename, flags_t flags){
+int execute(char * filename, func_flags_t fun_flags){
     int return_value = 0;
+    int i = 0;
     off_t entry_off = 0;
     FILE * source = NULL;
 
@@ -749,7 +858,7 @@ int execute(char * filename, flags_t flags){
             goto cleanup;
         }
 
-        if(flags.print_instructions){
+        if(fun_flags.print_instructions){
             print_instructions();
         }
         return_value = execute_instructions(source);
@@ -757,21 +866,29 @@ int execute(char * filename, flags_t flags){
             goto cleanup;
         }
 
-        if(flags.print_regs){
+        if(fun_flags.print_regs){
             print_regs();
         }
-
-        memset(instructions, 0, sizeof(instructions));
-        reg_struct.etp = 0;
-
-        if(flags.print_stack){
+        if(fun_flags.print_stack){
             print_stack();
         }
+        if(fun_flags.print_flags){
+            print_flags();
+        }
+
+        for(i=0; i<INSTRUCTION_SIZE; i++){
+            if(STRING == instructions[i].token_type){
+                free(instructions[i].data.str);
+            }
+        }
+        memset(instructions, 0, sizeof(instruction_t) * INSTRUCTION_SIZE);
+        reg_struct.etp = 0;
 
         //sleep(1);
     }
 
 cleanup:
+    free_jump_offsets();
     if(NULL != source){
         fclose(source);
     }
@@ -784,15 +901,16 @@ int main(int argc, char ** argv){
     int i = 0;
     int j = 0;
     int file_index = 0;
-    flags_t flags = {0};
+    func_flags_t fun_flags = {0};
 
     for(i=1; i<argc; i++){
         if('-' == argv[i][0]){
             for(j=1; argv[i][j] != 0; j++){
                 switch(argv[i][j]){
-                    case 'r': flags.print_regs = 1; break;
-                    case 's': flags.print_stack = 1; break;
-                    case 'i': flags.print_instructions = 1; break;
+                    case 'r': fun_flags.print_regs = 1; break;
+                    case 's': fun_flags.print_stack = 1; break;
+                    case 'i': fun_flags.print_instructions = 1; break;
+                    case 'f': fun_flags.print_flags = 1; break;
                     case 'h': print_help(); goto cleanup;
                     default:
                         printf("\e[31mUsage\e[0m: \e[31m%s\e[0m: Invalid flag \e[31m%c\e[0m\nExiting...\n", argv[0], argv[i][j]);
@@ -810,7 +928,7 @@ int main(int argc, char ** argv){
         goto cleanup;
     }
 
-    error_check = execute(argv[file_index], flags);
+    error_check = execute(argv[file_index], fun_flags);
 
     munmap(stack, getpagesize());
     munmap(text, getpagesize());

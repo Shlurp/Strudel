@@ -113,6 +113,10 @@ void print_stack(){
     putchar('\n');
 }
 
+void print_flags(){
+    printf("\e[1mZERO\e[0m: %i | \e[1mSIGNED\e[0m: %i\n", flags.zf, flags.sf);
+}
+
 int get_curr_line(FILE * source){
     off_t origin_offset = 0;
     off_t curr_offset = 0;

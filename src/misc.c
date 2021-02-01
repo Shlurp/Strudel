@@ -1,6 +1,6 @@
 #include "inter.h"
 
-int FLAGS = 0;
+flags_t flags = {0};
 bool_t newline = false;
 int * stack = NULL;
 var_t * text = NULL;
