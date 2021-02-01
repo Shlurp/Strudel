@@ -1,7 +1,5 @@
 #include "inter.h"
 
-// Doesnt work
-
 char * tokens[] = {"PUSH", "POP", "MOV", "LEA", "CMP", "JMP", "CALL", "JE", "JNE", "JG", "JGE", "JL", "JLE", "ADD", "SUB", "TAG", "SET", "[", "]", "END"};
 char * sizes[] = {"BYTE", "WORD", "DWORD", "QWORD"};
 char * regs[][5] = {{"RIP"},
@@ -14,7 +12,6 @@ char * regs[][5] = {{"RIP"},
 
 bool_t tag = false;
 
-// This needs to be rewritten
 int get_token_str(FILE * source, char ** token_str){
     int return_value = 0;
     int buffer_pointer = 0;
@@ -44,8 +41,13 @@ int get_token_str(FILE * source, char ** token_str){
                 }
             }
             
-            newline = true;
-            break;
+            if(0 == reg_struct.etp){
+                continue;
+            }
+            else{
+                newline = true;
+                break;
+            }
         }
         else if('\n' == curr_char && first){
             continue;
@@ -274,15 +276,16 @@ cleanup:
 
 int get_next_sequence(FILE * source){
     int return_value = 0;
-    int i = 0;
 
-    for(i=0; i<sizeof(instructions)/sizeof(instructions[0]) && !newline && !feof(source); i++){
-        return_value = get_next_instruction(source, &(instructions[i]));
+    for(reg_struct.etp=0; reg_struct.etp<sizeof(instructions)/sizeof(instructions[0]) && !newline && !feof(source); reg_struct.etp++){
+        return_value = get_next_instruction(source, &(instructions[reg_struct.etp]));
         if(-1 == return_value){
             goto cleanup;
         }
     }
     newline = false;
+
+    reg_struct.etp = 0;
 
 cleanup:
     return return_value;

@@ -160,7 +160,11 @@ off_t find_tag(FILE * source, char * str){
         goto cleanup;
     }
 
-    tag_offset = curr_offset;
+    tag_offset = get_jump_offset(str);
+    if(-1 == tag_offset){
+        printf("\e[31mError\e[0m: Tag \e[31m%s\e[0m doesn't exist\n", str);
+        goto cleanup;
+    }
 
 cleanup:
     return tag_offset;
