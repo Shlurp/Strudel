@@ -42,6 +42,12 @@ typedef enum flag_e {ZF=1}flag_t;
 extern char * tokens[];
 extern char * regs[][5];
 
+typedef struct flags_s{
+    char print_stack : 1;
+    char print_instructions : 1;
+    char print_regs : 1;
+}flags_t;
+
 union reg_u{
     long int reg_64;
     int reg_32[2];
@@ -95,7 +101,6 @@ typedef struct instruction_s{
 }instruction_t;
 
 extern int FLAGS;
-extern int line;
 extern bool_t newline;
 
 extern int * stack;
@@ -120,8 +125,11 @@ static inline int is_whitespace(char c){
 int get_next_instruction(FILE * source, instruction_t * instruction);
 
 int init();
+void print_help();
 void print_instructions();
 void print_regs();
+void print_stack();
+int get_curr_line(FILE * source);
 
 unsigned long hash(unsigned char * str);
 int insert_jump_offset(char * str, off_t offset);
@@ -145,7 +153,7 @@ static inline int get_reg(union reg_u ** reg){
                 break; 
             } 
             else{ 
-                printf("\e[31;1mError\e[0m on line \e[31m%i\e[0m: unexpected register value\n", line); 
+                printf("\e[31;1mError\e[0m: unexpected register value\n"); 
                 return_value = -1; 
                 goto cleanup;
             } 
@@ -167,7 +175,7 @@ static inline long int get_reg_value(union reg_u * reg, long int * value){
         case X_REG_SIZE: *value = reg->reg_16[i]; break;
         case HL_REG_SIZE: *value = reg->reg_8[i]; break;
         default:
-            printf("\e[31mError\e[0m invalid register size on line \e[31m%i\e[0m", line);
+            printf("\e[31mError\e[0m invalid register size");
             return_value = -1;
             goto cleanup;
     }
@@ -188,7 +196,7 @@ static inline int set_reg_value(union reg_u * reg, long int value, int i){
         case X_REG_SIZE: reg->reg_16[index] = value; break;
         case HL_REG_SIZE: reg->reg_8[index] = value; break;
         default:
-            printf("\e[31mError\e[0m invalid register size on line \e[31m%i\e[0m\n", line);
+            printf("\e[31mError\e[0m invalid register size on line\n");
             return_value = -1;
             goto cleanup;
     }

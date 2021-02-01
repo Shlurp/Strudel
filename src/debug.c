@@ -1,39 +1,9 @@
 #include "inter.h"
 
-int FLAGS = 0;
-int line = 0;
-bool_t newline = false;
-int * stack = NULL;
-var_t * text = NULL;
-registers_t reg_struct = {0};
-instruction_t instructions[INSTRUCTION_SIZE] = {0};
-jump_offset_t * jump_offsets[BUFFER_SIZE] = {0};
-
-int init(){
-    int return_value = 0;
-
-    stack = mmap(NULL, getpagesize(), PROT_WRITE | PROT_READ, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-    if(MAP_FAILED == stack){
-        return_value = print_error("\e[31mINIT: mmap error\e[0m", -1);
-        goto cleanup;
-    }
-
-    reg_struct.rsp.reg_64 = (long int)stack;
-    reg_struct.rbp.reg_64 = (long int)stack;
-
-    text = mmap(NULL, getpagesize(), PROT_WRITE | PROT_READ, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-    if(MAP_FAILED == text){
-        return_value = print_error("\e[31mINIT: mmap error\e[0m", -1);
-        goto cleanup;
-    }
-
-cleanup:
-    return return_value;
-}
-
 void print_instructions(){
     int i=0;
 
+    puts("---------------------");
     for(i=0; i<INSTRUCTION_SIZE && instructions[i].token_type != NONE; i++){
         fputs("TOKEN TYPE: ", stdout);
         switch(instructions[i].token_type){
@@ -59,12 +29,12 @@ void print_instructions(){
         }
 
         if(TOKEN == instructions[i].token_type){
-            fputs("TOKEN: ", stdout);
+            fputs("    TOKEN: ", stdout);
 
             puts(tokens[instructions[i].data.token-1]);
         }
         else if(SIZE == instructions[i].token_type){
-            fputs("SIZE: ", stdout);
+            fputs("    SIZE: ", stdout);
 
             switch(instructions[i].data.size){
                 case BYTE: puts("BYTE"); break;
@@ -75,50 +45,25 @@ void print_instructions(){
             }
         }
         else if(REGISTER == instructions[i].token_type){
-            fputs("REGISTER: ", stdout);
+            fputs("    REGISTER: ", stdout);
 
-            switch(instructions[i].data.reg.reg){
-                case RIP:   
-                    puts("RIP");
-                    break;
-                case RSP:
-                    puts("RSP");
-                    break;
-                case RBP:
-                    puts("RBP");
-                    break;
-                case RAX:
-                    puts("RAX");
-                    break;
-                case RBX:
-                    puts("RBX");
-                    break;
-                case RCX:
-                    puts("RCX");
-                    break;
-                case RDX:
-                    puts("RDX");
-                    break;
-                default:
-                    if(0 <= instructions[i].data.reg.reg && instructions[i].data.reg.reg < NUM_REG_SIZE){
-                        printf("r%i\n", instructions[i].data.reg.reg);
-                    }
-                    else{
-                        puts("\n\e[31mINVALID REGISTER\e[0m");
-                        goto cleanup;
-                    }
+            if(0 <= instructions[i].data.reg.reg && instructions[i].data.reg.reg < NUM_REG_SIZE){
+                printf("r%i\n", instructions[i].data.reg.reg);
+            }
+            else{
+                printf("%s\n", regs[instructions[i].data.reg.reg - NUM_REG_SIZE][0]);
             }
         }
         else if(STRING == instructions[i].token_type){
-            printf("TAG: %s\n", instructions[i].data.str);
+            printf("    TAG: %s\n", instructions[i].data.str);
         }
         
         else{
-            printf("DATA: %li\n", instructions[i].data.num);
+            printf("    DATA: %li\n", instructions[i].data.num);
         }
-
-        putchar('\n');
     }
+
+    puts("---------------------\n");
 
 cleanup:
     return;
@@ -134,4 +79,83 @@ void print_regs(){
     }
 
     putchar('\n');
+}
+
+void print_stack(){
+    long int i = 0;
+    int j = 0;
+
+    for(i=(long int)stack; i<=reg_struct.rsp.reg_64; i+=STACK_ELEMENT_SIZE){
+        printf("%p: %i", (void *)i, *(int *)i);
+
+        if(i <= reg_struct.rsp.reg_64 && reg_struct.rsp.reg_64 < i + STACK_ELEMENT_SIZE){
+            fputs("\e[32m < RSP\e[0m", stdout);
+        }
+        if(i <= reg_struct.rbp.reg_64 && reg_struct.rbp.reg_64 < i + STACK_ELEMENT_SIZE){
+            fputs("\e[32m < RBP\e[0m", stdout);
+        }
+        if(i <= reg_struct.rax.reg_64 && reg_struct.rax.reg_64 < i + STACK_ELEMENT_SIZE){
+            fputs("\e[32m < RAX\e[0m", stdout);
+        }
+        if(i <= reg_struct.rcx.reg_64 && reg_struct.rcx.reg_64 < i + STACK_ELEMENT_SIZE){
+            fputs("\e[32m < RCX\e[0m", stdout);
+        }
+
+        for(j=0; j<NUM_REG_SIZE; j++){
+            if(i <= reg_struct.rx[j].reg_64 && reg_struct.rx[j].reg_64 < i + STACK_ELEMENT_SIZE){
+                printf("\e[32m < r%i\e[0m", j);
+            }
+        }
+
+        putchar('\n');
+    }
+
+    putchar('\n');
+}
+
+int get_curr_line(FILE * source){
+    off_t origin_offset = 0;
+    off_t curr_offset = 0;
+    int error_check = 0;
+    int num_of_lines = 0;
+    char curr_char = 0;
+
+    origin_offset = ftell(source);
+    if(-1 == origin_offset){
+        num_of_lines = print_error("\e[31mGET_CURR_LINE\e[0m: Ftell error", -1);
+        goto cleanup;
+    }
+
+    curr_offset = fseek(source, curr_offset, SEEK_SET);
+    if(-1 == curr_offset){
+        num_of_lines = print_error("\e[31mGET_CURR_LINE\e[0m: Fseek error", -1);
+        goto cleanup;
+    }
+
+    do{
+        do{
+            error_check = fread(&curr_char, sizeof(curr_char), 1, source);
+            if(-1 == error_check){
+                num_of_lines = print_error("\e[31mGET_CURR_LINE\e[0m: Fread error", -1);
+                goto cleanup;
+            }
+        }while(curr_char != '\n' && !feof(source));
+
+        num_of_lines ++;
+
+        curr_offset = ftell(source);
+        if(-1 == curr_offset){
+            num_of_lines = print_error("\e[31mGET_CURR_LINE\e[0m: Ftell error", -1);
+            goto cleanup;
+        }
+    }while(curr_offset < origin_offset);
+
+    curr_offset = fseek(source, origin_offset, SEEK_SET);
+    if(-1 == curr_offset){
+        num_of_lines = print_error("\e[31mGET_CURR_LINE\e[0m: Fseek error", -1);
+        goto cleanup;
+    }
+
+cleanup:
+    return num_of_lines;
 }

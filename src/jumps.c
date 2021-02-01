@@ -86,7 +86,6 @@ off_t find_tag(FILE * source, char * str){
     off_t origin_offset = 0;
     off_t curr_offset = 0;
     off_t tag_offset = -1;
-    int curr_line = line;
     int diff = 0;
     int error_check = 0;
     char curr_char = 0;
@@ -106,10 +105,6 @@ off_t find_tag(FILE * source, char * str){
             goto cleanup;
         }
 
-        if(newline){
-            line --;
-        }
-
         if(TOKEN == instruction.token_type && TAG == instruction.data.token){
             error_check = get_next_instruction(source, &instruction);
             if(-1 == error_check){
@@ -122,7 +117,7 @@ off_t find_tag(FILE * source, char * str){
                 error_check = fread(&curr_char, sizeof(curr_char), 1, source);
                 if(0 == error_check){
                     if(feof(source)){
-                        printf("\e[31mError\e[0m on line \e[31m%i\e[0m: Tag can't be on eof\n", curr_line+1);
+                        printf("\e[31mError\e[0m on line \e[31m%i\e[0m: Tag can't be on eof\n", get_curr_line(source));
                         tag_offset = -1;
                         goto cleanup;   
                     }
@@ -136,7 +131,7 @@ off_t find_tag(FILE * source, char * str){
             newline = false;
 
             if(STRING != instruction.token_type){
-                printf("\e[31mError\e[0m on line \e[31m%i\e[0m: Expected string\n", curr_line);
+                printf("\e[31mError\e[0m on line \e[31m%i\e[0m: Expected string\n", get_curr_line(source));
                 goto cleanup;
             }
 

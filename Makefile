@@ -1,4 +1,4 @@
-PROJECT_NAME = asm
+PROJECT_NAME = dum
 CC = gcc
 SRC_DIR = ./src
 INCLUDE_DIR = ./include

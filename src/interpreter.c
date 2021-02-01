@@ -1,5 +1,7 @@
 #include "inter.h"
 
+// Doesnt work
+
 char * tokens[] = {"PUSH", "POP", "MOV", "LEA", "JMP", "CALL", "CMP", "JE", "JNE", "JG", "JGE", "JL", "JLE", "ADD", "SUB", "TAG", "SET", "[", "]", "END"};
 char * sizes[] = {"BYTE", "WORD", "DWORD", "QWORD"};
 char * regs[][5] = {{"RIP"},
@@ -12,6 +14,7 @@ char * regs[][5] = {{"RIP"},
 
 bool_t tag = false;
 
+// This needs to be rewritten
 int get_token_str(FILE * source, char ** token_str){
     int return_value = 0;
     int buffer_pointer = 0;
@@ -30,7 +33,6 @@ int get_token_str(FILE * source, char ** token_str){
         }
         if('\n' == curr_char && !first){
             newline = true;
-            line ++;
             break;
         }
         else if(';' == curr_char){
@@ -41,14 +43,11 @@ int get_token_str(FILE * source, char ** token_str){
                     goto cleanup;
                 }
             }
-            if(!first){
-                newline = true;
-                line ++;
-            }
+            
+            newline = true;
             break;
         }
         else if('\n' == curr_char && first){
-            line ++;
             continue;
         }
         else if((' ' == curr_char || ',' == curr_char) && first){
@@ -80,7 +79,6 @@ int get_token_str(FILE * source, char ** token_str){
 
             if('\n' == curr_char){
                 newline = true;
-                line ++;
             }
             else{
                 return_value = rseek(source, -1, SEEK_CUR);
@@ -225,7 +223,7 @@ int get_next_instruction(FILE * source, instruction_t * instruction){
                     instruction->data.reg.index = 0;
                 }
                 else{
-                    printf("\e[31;1mError\e[0m on line \e[31m%i\e[0m: token: \e[31m%s\e[0m matches with register \e[31m%s\e[0m, but is not a valid register\nExiting...\n", line+1, token_str, regs[i][j]);
+                    printf("\e[31;1mError\e[0m on line \e[31m%i\e[0m: token: \e[31m%s\e[0m matches with register \e[31m%s\e[0m, but is not a valid register\nExiting...\n", get_curr_line(source), token_str, regs[i][j]);
                     return_value = -1;
                     goto cleanup;
                 }
@@ -243,7 +241,7 @@ int get_next_instruction(FILE * source, instruction_t * instruction){
         }
         for(i; i<token_length; i++){
             if(token_str[i] < '0' || token_str[i] > '9'){
-                printf("\e[31;1mError\e[0m on line \e[31m%i\e[0m on token: \e[31m%s\e[0m on index: \e[31m%i\e[0m\nExiting...\n", line+1, token_str, i);
+                printf("\e[31;1mError\e[0m on line \e[31m%i\e[0m on token: \e[31m%s\e[0m on index: \e[31m%i\e[0m\nExiting...\n", get_curr_line(source), token_str, i);
                 return_value = -1;
                 goto cleanup;
             }
@@ -290,7 +288,7 @@ cleanup:
     return return_value;
 }
 
-int * get_pointer_value(){
+int * get_pointer_value(FILE * source){
     char * return_value = 0;
     int error_check = 0;
     long int temp = 0;
@@ -331,7 +329,7 @@ int * get_pointer_value(){
                 return_value -= temp;
             }
             else{
-                printf("\e[31;1mError\e[0m on line \e[31m%i\e[0m: unexpected token value\n", line);
+                printf("\e[31;1mError\e[0m on line \e[31m%i\e[0m: unexpected token value\n", get_curr_line(source));
                 return_value = FAIL;
                 goto cleanup;
             }
@@ -345,7 +343,7 @@ int * get_pointer_value(){
                 return_value -= instructions[reg_struct.etp].data.num;
             }
             else{
-                printf("\e[31;1mError\e[0m on line \e[31m%i\e[0m: unexpected token value\n", line);
+                printf("\e[31;1mError\e[0m on line \e[31m%i\e[0m: unexpected token value\n", get_curr_line(source));
                 return_value = FAIL;
                 goto cleanup;
             }
@@ -377,11 +375,10 @@ int execute_instructions(FILE * source){
     union reg_u * temp_register = NULL;
 
     if(TOKEN != instructions[0].token_type){
-        printf("\e[31;1mError\e[0m on line \e[31m%i\e[0m: expected token\n", line);
+        printf("\e[31;1mError\e[0m on line \e[31m%i\e[0m: expected token\n", get_curr_line(source));
         return_value = -1;
         goto cleanup;
     }
-
     if(END == instructions[0].data.token){
         return_value = -1;
         goto cleanup;
@@ -409,7 +406,7 @@ int execute_instructions(FILE * source){
                 *(long int *)reg_struct.rsp.reg_64 = temp;
             }
             else{
-                printf("\e[31;1mError\e[0m on line \e[31m%i\e[0m: expected register or integral type\n", line);
+                printf("\e[31;1mError\e[0m on line \e[31m%i\e[0m: expected register or integral type\n", get_curr_line(source));
                 return_value = -1;
                 goto cleanup;
             }
@@ -420,31 +417,37 @@ int execute_instructions(FILE * source){
 
         case POP: {
             reg_struct.etp ++;
-            if(REGISTER != instructions[reg_struct.etp].token_type){
-                printf("\e[31;1mError\e[0m on line \e[31m%i\e[0m: expected register type\n", line);
+            if(REGISTER == instructions[reg_struct.etp].token_type){
+                reg_struct.rsp.reg_64 -= STACK_ELEMENT_SIZE;
+
+                return_value = get_reg(&temp_register);
+                if(-1 == return_value){
+                    goto cleanup;
+                }
+
+                i = instructions[reg_struct.etp].data.reg.index;
+
+                switch(instructions[reg_struct.etp].data.reg.size){
+                    case R_REG_SIZE: temp_register->reg_64 = *(long int *)reg_struct.rsp.reg_64; break;
+                    case E_REG_SIZE: temp_register->reg_32[i] = *(long int *)reg_struct.rsp.reg_64; break;
+                    case X_REG_SIZE: temp_register->reg_16[i] = *(long int *)reg_struct.rsp.reg_64; break;
+                    case HL_REG_SIZE: temp_register->reg_8[i] = *(long int *)reg_struct.rsp.reg_64; break;
+                    default:
+                        printf("\e[31mError\e[0m invalid register size on line \e[31m%i\e[0m", get_curr_line(source));
+                        return_value = -1;
+                        goto cleanup;
+                }
+            }
+            else if(NONE == instructions[reg_struct.etp].token_type){
+                reg_struct.rsp.reg_64 -= STACK_ELEMENT_SIZE;
+            }
+            else{
+                printf("\e[31;1mError\e[0m on line \e[31m%i\e[0m: expected register type\n", get_curr_line(source));
                 return_value = -1;
                 goto cleanup;
             }
 
-            reg_struct.rsp.reg_64 -= STACK_ELEMENT_SIZE;
-
-            return_value = get_reg(&temp_register);
-            if(-1 == return_value){
-                goto cleanup;
-            }
-
-            i = instructions[reg_struct.etp].data.reg.index;
-
-            switch(instructions[reg_struct.etp].data.reg.size){
-                case R_REG_SIZE: temp_register->reg_64 = *(long int *)reg_struct.rsp.reg_64; break;
-                case E_REG_SIZE: temp_register->reg_32[i] = *(long int *)reg_struct.rsp.reg_64; break;
-                case X_REG_SIZE: temp_register->reg_16[i] = *(long int *)reg_struct.rsp.reg_64; break;
-                case HL_REG_SIZE: temp_register->reg_8[i] = *(long int *)reg_struct.rsp.reg_64; break;
-                default:
-                    printf("\e[31mError\e[0m invalid register size on line \e[31m%i\e[0m", line);
-                    return_value = -1;
-                    goto cleanup;
-            }
+            
 
             break;
         }
@@ -459,14 +462,14 @@ int execute_instructions(FILE * source){
 
             if(TOKEN == instructions[reg_struct.etp].token_type && IN == instructions[reg_struct.etp].data.token){        //MOV [p1] ____
                 if(0 == size){
-                    printf("\e[31mError\e[0m on line \e[31m%i\e[0m: Expected size token\n", line);
+                    printf("\e[31mError\e[0m on line \e[31m%i\e[0m: Expected size token\n", get_curr_line(source));
                     return_value = -1;
                     goto cleanup;
                 }
 
                 //Get p1 
                 reg_struct.etp ++;
-                r1 = get_pointer_value();
+                r1 = get_pointer_value(source);
                 if(FAIL == r1){
                     puts("EXECUTE_INSTRUCTIONS: Get_pointer_value error");
                     return_value = -1;
@@ -476,7 +479,7 @@ int execute_instructions(FILE * source){
                 //printf("%i TOKEN VALUE: %i\n", reg_struct.etp, instructions[reg_struct.etp].token_type);
 
                 if(TOKEN == instructions[reg_struct.etp].token_type && IN == instructions[reg_struct.etp].data.token){    //MOV [p1] [p2] (eg. MOV [rax] [rbp - 16])
-                    r2 = get_pointer_value();
+                    r2 = get_pointer_value(source);
                     if(FAIL == r2){
                         puts("EXECUTE_INSTRUCTIONS: Get_pointer_value error");
                         return_value = -1;
@@ -488,7 +491,7 @@ int execute_instructions(FILE * source){
                         case WORD: *(short int *)r1 = *(short int *)r2; break;
                         case DWORD: *(int *)r1 = *(int *)r2; break;
                         case QWORD: *(long int *)r1 = *(long int *)r2; break;
-                        default: printf("\e[31mError\e[0m on line %i: Invalid size value", line); return_value = -1; goto cleanup;
+                        default: printf("\e[31mError\e[0m on line %i: Invalid size value", get_curr_line(source)); return_value = -1; goto cleanup;
                     }
                 }
                 else if(REGISTER == instructions[reg_struct.etp].token_type){      //MOV [p1] reg (eg. MOV [rax] rcx)
@@ -507,7 +510,7 @@ int execute_instructions(FILE * source){
                         case WORD: *(short int *)r1 = (short int)temp; break;
                         case DWORD: *(int *)r1 = (int)temp; break;
                         case QWORD: *(long int *)r1 = (long int)temp; break;
-                        default: printf("\e[31mError\e[0m on line %i: Invalid size value", line); return_value = -1; goto cleanup;
+                        default: printf("\e[31mError\e[0m on line %i: Invalid size value", get_curr_line(source)); return_value = -1; goto cleanup;
                     }
                 }
                 else if(NUM == instructions[reg_struct.etp].token_type){        //MOV [p1] NUM [eg. MOV [rax] 121]
@@ -518,7 +521,7 @@ int execute_instructions(FILE * source){
                         case WORD: *(short int *)r1 = (short int)temp; break;
                         case DWORD: *(int *)r1 = (int)temp; break;
                         case QWORD: *(long int *)r1 = (long int)temp; break;
-                        default: printf("\e[31mError\e[0m on line %i: Invalid size value", line); return_value = -1; goto cleanup;
+                        default: printf("\e[31mError\e[0m on line %i: Invalid size value", get_curr_line(source)); return_value = -1; goto cleanup;
                     }
                 }
             }
@@ -533,13 +536,13 @@ int execute_instructions(FILE * source){
 
                 if(TOKEN == instructions[reg_struct.etp].token_type && IN == instructions[reg_struct.etp].data.token){        //MOV reg [p1] (eg. MOV rax [rbp + 16])
                     if(0 == size){
-                        printf("\e[31mError\e[0m on line \e[31m%i\e[0m: Expected size token\n", line);
+                        printf("\e[31mError\e[0m on line \e[31m%i\e[0m: Expected size token\n", get_curr_line(source));
                         return_value = -1;
                         goto cleanup;
                     }
 
                     reg_struct.etp ++;
-                    r1 = get_pointer_value();
+                    r1 = get_pointer_value(source);
                     if(FAIL == r1){
                         puts("EXECUTE_INSTRUCTIONS: Get_pointer_value error");
                         return_value = -1;
@@ -595,12 +598,12 @@ int execute_instructions(FILE * source){
                 reg_struct.etp ++;
 
                 if(TOKEN != instructions[reg_struct.etp].token_type || IN != instructions[reg_struct.etp].data.token){
-                    printf("\e[31mError\e[0m on line \e[31m%i\e[0m: LEA must be followed by a [ token\n", line);
+                    printf("\e[31mError\e[0m on line \e[31m%i\e[0m: LEA must be followed by a [ token\n", get_curr_line(source));
                     return_value = -1;
                     goto cleanup;
                 }
 
-                temp = (long int)get_pointer_value();
+                temp = (long int)get_pointer_value(source);
                 if(-1 == temp){
                     return_value = -1;
                     goto cleanup;
@@ -612,7 +615,7 @@ int execute_instructions(FILE * source){
                 }
             }
             else{
-                printf("\e[31mError\e[0m on line \e[31m%i\e[0m: expected register as first parameter\n", line);
+                printf("\e[31mError\e[0m on line \e[31m%i\e[0m: expected register as first parameter\n", get_curr_line(source));
                 return_value = -1;
                 goto cleanup;
             }
@@ -623,7 +626,7 @@ int execute_instructions(FILE * source){
         case TAG: {
             reg_struct.etp ++;
             if(STRING != instructions[reg_struct.etp].token_type){
-                printf("\e[31mError\e[0m on line \e[31m%i\e[0m: expected string\n", line);
+                printf("\e[31mError\e[0m on line \e[31m%i\e[0m: expected string\n", get_curr_line(source));
                 return_value = -1;
                 goto cleanup;
             }
@@ -648,7 +651,7 @@ int execute_instructions(FILE * source){
         case JMP: {
             reg_struct.etp ++;
             if(STRING != instructions[reg_struct.etp].token_type){
-                printf("\e[31mError\e[0m on line \e[31m%i\e[0m: expected string\n", line);
+                printf("\e[31mError\e[0m on line \e[31m%i\e[0m: expected string\n", get_curr_line(source));
                 return_value = -1;
                 goto cleanup;
             }
@@ -674,7 +677,7 @@ int execute_instructions(FILE * source){
         case CALL: {
             reg_struct.etp ++;
             if(STRING != instructions[reg_struct.etp].token_type){
-                printf("\e[31mError\e[0m on line \e[31m%i\e[0m: expected string\n", line);
+                printf("\e[31mError\e[0m on line \e[31m%i\e[0m: expected string\n", get_curr_line(source));
                 return_value = -1;
                 goto cleanup;
             }
@@ -698,15 +701,18 @@ int execute_instructions(FILE * source){
             }
 
             break;
-        }
+        } 
+    
+        default: printf("\e[33mWarning\e[0m on line \e[33m%i\e[0m: unsupported token. (These may be added in later versions)\n", get_curr_line(source)); goto cleanup;
     }
 
     reg_struct.etp ++;
 
     for(reg_struct.etp; reg_struct.etp < INSTRUCTION_SIZE; reg_struct.etp++){
         if(instructions[reg_struct.etp].token_type != NONE){
-            printf("\e[33mWarning\e[0m on line \e[33m%i\e[0m: excess tokens (index: \e[33m%i\e[0m)\n(Excess tokens are ignored)\n", line, reg_struct.etp);
-            break;
+            printf("\e[33mWarning\e[0m on line \e[33m%i\e[0m: excess tokens (index: \e[33m%i\e[0m)\n(Excess tokens are ignored)\n", get_curr_line(source), reg_struct.etp);
+            printf("TOKEN TYPE: %i TOKEN VALUE: %li\n", instructions[reg_struct.etp].token_type, instructions[reg_struct.etp].data.num);
+            //break;
         }
     }
 
@@ -714,12 +720,10 @@ cleanup:
     return return_value;
 }
 
-int execute(char * filename){
+int execute(char * filename, flags_t flags){
     int return_value = 0;
     off_t entry_off = 0;
     FILE * source = NULL;
-    long int i = 0;
-    int j = 0;
 
     source = fopen(filename, "r");
     if(NULL == source){
@@ -745,41 +749,24 @@ int execute(char * filename){
             goto cleanup;
         }
 
-        print_instructions();
+        if(flags.print_instructions){
+            print_instructions();
+        }
         return_value = execute_instructions(source);
         if(-1 ==return_value){
             goto cleanup;
         }
-        print_regs();
+
+        if(flags.print_regs){
+            print_regs();
+        }
 
         memset(instructions, 0, sizeof(instructions));
         reg_struct.etp = 0;
 
-        for(i=(long int)stack; i<=reg_struct.rsp.reg_64; i+=STACK_ELEMENT_SIZE){
-            printf("%p: %i", (void *)i, *(int *)i);
-
-            if(i <= reg_struct.rsp.reg_64 && reg_struct.rsp.reg_64 < i + STACK_ELEMENT_SIZE){
-                fputs("\e[32m < RSP\e[0m", stdout);
-            }
-            if(i <= reg_struct.rbp.reg_64 && reg_struct.rbp.reg_64 < i + STACK_ELEMENT_SIZE){
-                fputs("\e[32m < RBP\e[0m", stdout);
-            }
-            if(i <= reg_struct.rax.reg_64 && reg_struct.rax.reg_64 < i + STACK_ELEMENT_SIZE){
-                fputs("\e[32m < RAX\e[0m", stdout);
-            }
-            if(i <= reg_struct.rcx.reg_64 && reg_struct.rcx.reg_64 < i + STACK_ELEMENT_SIZE){
-                fputs("\e[32m < RCX\e[0m", stdout);
-            }
-
-            for(j=0; j<NUM_REG_SIZE; j++){
-                if(i <= reg_struct.rx[j].reg_64 && reg_struct.rx[j].reg_64 < i + STACK_ELEMENT_SIZE){
-                    printf("\e[32m < r%i\e[0m", j);
-                }
-            }
-
-            putchar('\n');
+        if(flags.print_stack){
+            print_stack();
         }
-        putchar('\n');
 
         //sleep(1);
     }
@@ -794,13 +781,36 @@ cleanup:
 
 int main(int argc, char ** argv){
     int error_check = 0;
+    int i = 0;
+    int j = 0;
+    int file_index = 0;
+    flags_t flags = {0};
+
+    for(i=1; i<argc; i++){
+        if('-' == argv[i][0]){
+            for(j=1; argv[i][j] != 0; j++){
+                switch(argv[i][j]){
+                    case 'r': flags.print_regs = 1; break;
+                    case 's': flags.print_stack = 1; break;
+                    case 'i': flags.print_instructions = 1; break;
+                    case 'h': print_help(); goto cleanup;
+                    default:
+                        printf("\e[31mUsage\e[0m: \e[31m%s\e[0m: Invalid flag \e[31m%c\e[0m\nExiting...\n", argv[0], argv[i][j]);
+                        goto cleanup;
+                }
+            }
+        }
+        else{
+            file_index = i;
+        }
+    }
 
     error_check = init();
     if(-1 == error_check){
         goto cleanup;
     }
 
-    execute(argv[1]);
+    error_check = execute(argv[file_index], flags);
 
     munmap(stack, getpagesize());
     munmap(text, getpagesize());
