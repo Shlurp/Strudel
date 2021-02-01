@@ -11,9 +11,9 @@ TAG fun         ; Declares a tag, in this case, it's used as a subroutine
 PUSH RBP        ; Pushes the frame pointer onto the stack
 MOV RBP RSP     ; Moves the stack pointer into the frame pointer - allowing for local variables
 PUSH 200        ; Pushes 200 onto the stack
-LEA RSP [RSP - 8] ; Moves RSP back 8
-POP RBP     ; Gets the frame pointer
-POP RIP     ; The instruction pointer was pushed onto the stack by CALL, and now this returns to the calling func
+SUB RSP 8       ; Moves RSP back 8
+POP RBP         ; Gets the frame pointer
+POP RIP         ; The instruction pointer was pushed onto the stack by CALL, and now this returns to the calling func
 ;
 ; This is the same as:
 ;

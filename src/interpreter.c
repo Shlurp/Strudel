@@ -811,6 +811,58 @@ int execute_instructions(FILE * source){
             break;
         }
         
+        case SUB:
+        case ADD: {
+            i = reg_struct.etp;
+
+            reg_struct.etp ++;
+            if(REGISTER != instructions[reg_struct.etp].token_type){
+                printf("\e[31mError\e[0m on line \e[31m%i\e[0m: Expected register value\n", get_curr_line(source));
+                return_value = -1;
+                goto cleanup;
+            }
+
+            return_value = get_reg(&r3);
+            if(-1 == return_value){
+                goto cleanup;
+            }
+
+            return_value = get_reg_value(r3, &temp);
+            if(-1 == return_value){
+                goto cleanup;
+            }
+
+            reg_struct.etp ++;
+            if(REGISTER == instructions[reg_struct.etp].token_type){
+                return_value = get_reg(&r4);
+                if(-1 == return_value){
+                    goto cleanup;
+                }
+
+                return_value = get_reg_value(r4, &temp1);
+                if(-1 == return_value){
+                    goto cleanup;
+                }
+            }
+            else if(NUM == instructions[reg_struct.etp].token_type){
+                temp1 = instructions[reg_struct.etp].data.num;
+            }
+
+            if(ADD == instructions[i].data.token){
+                temp += temp1;
+            }
+            else if(SUB == instructions[i].data.token){
+                temp -= temp1;
+            }
+
+            return_value = set_reg_value(r3, temp, i+1);
+            if(-1 == return_value){
+                goto cleanup;
+            }
+            
+            break;
+        }
+
         default: printf("\e[33mWarning\e[0m on line \e[33m%i\e[0m: unsupported token. (These may be added in later versions)\n", get_curr_line(source)); goto cleanup;
     }
 

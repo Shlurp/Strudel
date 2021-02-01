@@ -30,6 +30,14 @@ The POP instruction has two usages:
 + **POP \<REG>** - Pops the top of the stack into the register REG. (Moves the stack pointer, RSP, back)
 + **POP** - Moves the stack pointer back
 
+### **ADD**
+The ADD instruction has the following usage:  
+**ADD \<REG1> \<REG2 / NUM>** - This increments REG1 by the value of REG2 or NUM.
+
+### **SUB**
+The SUB instruction has the following usage:  
+**SUB \<REG1> \<REG2 / NUM>** - This decrements REG1 by the value of REG2 or NUM.
+
 ### **MOV**
 The MOV instruction has the following usages:
 + **MOV \<SIZE> \[POINTER1\] \[POINTER2\]** - Moves **SIZE** bytes of data located at POINTER2 to the area pointed to by POINTER1

@@ -40,6 +40,7 @@ void print_help(){
     "\t\e[1m-s\e[0m\tShows the stack after each sequence (after execution)\n"
     "\t\e[1m-r\e[0m\tShows the state of the registers after each sequence (after execution)\n"
     "\t\e[1m-i\e[0m\tShows the parsed instructions after each sequence (before execution)\n"
+    "\t\e[1m-f\e[0m\tShows the state of the flags after each sequence (after execution)\n"
     "\t\e[1m-h\e[0m\tShows this text\n";
 
     puts(prompt);
