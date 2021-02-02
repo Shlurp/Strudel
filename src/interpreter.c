@@ -120,8 +120,9 @@ int get_next_instruction(FILE * source, instruction_t * instruction){
     int difference = 0;
     int i = 0;
     int j = 0;
-    char * endptr = NULL;
     char * token_str = NULL;
+
+    memset(instruction, 0, sizeof(instruction_t));
 
     token_length = get_token_str(source, &token_str);
     if(-1 == token_length){
@@ -246,7 +247,7 @@ int get_next_instruction(FILE * source, instruction_t * instruction){
     else{
         i = 0;
     }
-    for(i; i<token_length; i++){
+    for(; i<token_length; i++){
         if(token_str[i] < '0' || token_str[i] > '9'){
             j = 0;
             break;
@@ -299,7 +300,6 @@ int * get_pointer_value(FILE * source){
     char * return_value = 0;
     int error_check = 0;
     long int temp = 0;
-    int i = 0;
     bool_t first = true;
     union reg_u * temp_register = NULL;
 
@@ -315,8 +315,6 @@ int * get_pointer_value(FILE * source){
         }
 
         if(REGISTER == instructions[reg_struct.etp].token_type){
-            i = instructions[reg_struct.etp].data.reg.index;
-
             temp = get_reg(&temp_register);
             if(-1 == temp){
                 return_value = FAIL;
@@ -904,7 +902,7 @@ int execute_instructions(FILE * source){
 
     reg_struct.etp ++;
 
-    for(reg_struct.etp; reg_struct.etp < INSTRUCTION_SIZE; reg_struct.etp++){
+    for(; reg_struct.etp < INSTRUCTION_SIZE; reg_struct.etp++){
         if(instructions[reg_struct.etp].token_type != NONE){
             printf("\e[33mWarning\e[0m on line \e[33m%i\e[0m: excess tokens (index: \e[33m%i\e[0m)\n(Excess tokens are ignored)\n", get_curr_line(source), reg_struct.etp);
             printf("TOKEN TYPE: %i TOKEN VALUE: %li\n", instructions[reg_struct.etp].token_type, instructions[reg_struct.etp].data.num);
@@ -975,6 +973,7 @@ int execute(char * filename, func_flags_t fun_flags){
 
 cleanup:
     free_jump_offsets();
+    free_vars();
     if(NULL != source){
         fclose(source);
     }

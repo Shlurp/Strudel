@@ -7,9 +7,10 @@ unsigned long hash(unsigned char * str){
     unsigned long hash = 5381;
     int c = 0;
 
-    while (c = *str++)
+    do{
+        c = *(str++);
         hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
-
+    }while(c != 0);
     return hash;
 }
 
@@ -20,7 +21,7 @@ int insert_jump_offset(char * str, off_t offset){
     jump_offset_t * node = NULL;
     jump_offset_t * next = NULL;
 
-    index = ABS((int)hash(str)) % BUFFER_SIZE;
+    index = (unsigned int)hash((unsigned char *)str) % BUFFER_SIZE;
 
     next = jump_offsets[index];
     while(next != NULL){
@@ -59,7 +60,7 @@ off_t get_jump_offset(char * str){
     int diff = 0;
     jump_offset_t * node = NULL;
 
-    index = ABS((int)hash(str)) % BUFFER_SIZE;
+    index = (unsigned int)hash((unsigned char *)str) % BUFFER_SIZE;
 
     node = jump_offsets[index];
 
@@ -90,7 +91,6 @@ off_t find_tag(FILE * source, char * str){
     int error_check = 0;
     char curr_char = 0;
     instruction_t instruction = {0};
-    jump_offset_t * node = NULL;
 
     origin_offset = ftell(source);
     if(-1 == origin_offset){
@@ -104,6 +104,7 @@ off_t find_tag(FILE * source, char * str){
         if(-1 == error_check){
             goto cleanup;
         }
+        
 
         if(TOKEN == instruction.token_type && TAG == instruction.data.token){
             error_check = get_next_instruction(source, &instruction);
@@ -114,7 +115,7 @@ off_t find_tag(FILE * source, char * str){
             curr_char = 0;
             
             while('\n' != curr_char && !newline){
-                error_check = fread(&curr_char, sizeof(curr_char), 1, source);
+                error_check = rread(&curr_char, sizeof(curr_char), 1, source);
                 if(0 == error_check){
                     if(feof(source)){
                         printf("\e[31mError\e[0m on line \e[31m%i\e[0m: Tag can't be on eof\n", get_curr_line(source));
@@ -150,6 +151,12 @@ off_t find_tag(FILE * source, char * str){
             free(instruction.data.str);
         }
         else{
+            if(STRING == instruction.token_type){
+                if(NULL != instruction.data.str){
+                    free(instruction.data.str);
+                    instruction.data.str = NULL;
+                }
+            }
             diff = -1;
         }
     }while(diff != 0 && !feof(source));

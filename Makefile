@@ -15,7 +15,7 @@ $(OBJ_DIR):
 	mkdir $(OBJ_DIR)
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c $(DEPS)
-	$(CC) -c $(CFLAGS) $< -o $@
+	$(CC) -c -Wall $(CFLAGS) $< -o $@
 
 $(PROJECT_NAME): $(OBJ)
 	$(CC) $(CFLAGS) $^ -o $@

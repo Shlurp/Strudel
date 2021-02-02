@@ -134,6 +134,7 @@ int get_next_instruction(FILE * source, instruction_t * instruction);
 
 int init();
 void print_help();
+void print_instruction(instruction_t instruction);
 void print_instructions();
 void print_regs();
 void print_stack();
@@ -259,6 +260,27 @@ static inline void free_jump_offsets(){
             }
             free(node);
             node = next_node;
+        }
+    }
+}
+
+static inline void free_vars(){
+    int i = 0;
+    var_t * node = NULL;
+    var_t * next = NULL;
+
+    for(i=0; i<BUFFER_SIZE; i++){
+        node = text_vars[i];
+
+        while(NULL != node){
+            next = node->next;
+
+            if(NULL != node->name){
+                free(node->name);
+            }
+            free(node);
+
+            node = next;
         }
     }
 }

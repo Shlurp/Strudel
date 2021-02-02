@@ -57,7 +57,7 @@ int insert_var(char * name, void * addr){
     var_t * next = NULL;
     int index = 0;
 
-    index = ABS((int)hash(name)) % BUFFER_SIZE;
+    index = (unsigned int)hash((unsigned char *)name) % BUFFER_SIZE;
 
     next = text_vars[index];
     while(NULL != next){
@@ -166,6 +166,8 @@ int set_text_var(){
     }
 
     return_value = insert_var(name, addr);
+    free(name);
+    instructions[reg_struct.etp-1].token_type = NONE;
 
 cleanup:
     return return_value;
@@ -177,7 +179,7 @@ void * get_var_value(char * name){
     int index = 0;
     var_t * node = NULL;
 
-    index = ABS((int)hash(name)) % BUFFER_SIZE;
+    index = (unsigned int)hash((unsigned char *)name) % BUFFER_SIZE;
 
     node = text_vars[index];
 
