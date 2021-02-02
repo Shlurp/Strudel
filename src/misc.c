@@ -61,13 +61,13 @@ int insert_var(char * name, void * addr){
 
     next = text_vars[index];
     while(NULL != next){
-        next = next->next;
-
         diff = strncmp(next->name, name, BUFFER_SIZE);
         if(0 == diff){
             next->addr = addr;
             goto cleanup;
         }
+
+        next = next->next;
     }
 
     node = malloc(sizeof(var_t));

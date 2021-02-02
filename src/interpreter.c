@@ -202,7 +202,7 @@ int get_next_instruction(FILE * source, instruction_t * instruction){
                  *   _______________________________________
                  *  /       E*X                             \
                  *  | __________________                    |
-                 *  |/                  \                   |
+                 *  |/   *X             \                   |
                  *  || _______          |                   |
                  *  ||/       \         |                   |
                  *  +----+----+----+----+----+----+----+----+
@@ -688,6 +688,12 @@ int execute_instructions(FILE * source){
             temp = strncmp(instructions[reg_struct.etp].data.str, "WRITE", BUFFER_SIZE);
             if(0 == temp){
                 reg_struct.rax.reg_32[0] = write(reg_struct.rax.reg_32[0], (void *)reg_struct.rbx.reg_64, reg_struct.rcx.reg_64);
+                break;
+            }
+            
+            temp = strncmp(instructions[reg_struct.etp].data.str, "READ", BUFFER_SIZE);
+            if(0 == temp){
+                reg_struct.rax.reg_32[0] = read(reg_struct.rax.reg_32[0], (void *)reg_struct.rbp.reg_64, reg_struct.rcx.reg_64);
                 break;
             }
 
