@@ -19,9 +19,18 @@ int insert_jump_offset(char * str, off_t offset){
     int diff = 0;
     jump_offset_t * node = NULL;
     jump_offset_t * next = NULL;
-    jump_offset_t * curr_node = NULL;
 
     index = ABS((int)hash(str)) % BUFFER_SIZE;
+
+    next = jump_offsets[index];
+    while(next != NULL){
+        diff = strncmp(next->tag, str, BUFFER_SIZE);
+        if(0 == diff){
+            next->offset = offset;
+            goto cleanup;
+        }
+        next = next->next;
+    }
 
     node = malloc(sizeof(jump_offset_t));
     if(NULL == node){
@@ -32,16 +41,6 @@ int insert_jump_offset(char * str, off_t offset){
     node->tag = calloc(strnlen(str, BUFFER_SIZE) + 1, sizeof(char));
     memcpy(node->tag, str, strnlen(str, BUFFER_SIZE));
     node->offset = offset;
-
-    next = jump_offsets[index];
-    
-    while(curr_node != NULL){
-        diff = strncmp(next->tag, str, BUFFER_SIZE);
-        if(0 == diff){
-            next->offset = offset;
-            goto cleanup;
-        }
-    }
 
     next = jump_offsets[index];
     node->next = next;

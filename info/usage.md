@@ -79,6 +79,15 @@ Conditional jumps, jumps that jump only if their condition is met:
 Usage:  
 **CALL \<TAG>** - Calls a subroutine (pushes RIP, the instruction pointer, onto the stack and then jumps to the TAG)
 
+### **SET**
+Usage:
+**SET \<VAR NAME> \<STRING / NUM>** - Creates a global variable (in the text data section) by the name of NAME with the value STRING or NUM. You must use quotation marks for a string.  
+The following are recognized escape sequences:
++ `\n` - newline
++ `\r` - carriage return
++ `\b` - backspace
++ `\e` - escape character
+
 ### **END**
 Terminates the program (should only be used at the end of the entry subroutine)  
 
@@ -127,7 +136,27 @@ The stack after execution will look like:
 > 200
 ```
 
+***
+<br>
+
+### **FUNCTIONS**
+The following are all of the predefined functions:
+<br>
+
+**WRITE**  
+The write function calls C's standard `write` function.
++ **PARAMS**:
+    + EAX - the file descriptor to write to
+    + RBX - a pointer to the data to write
+    + RCX - the number of bytes to write
++ **RETURNS**: the number of bytes written into EAX.
+
+***
+<br>
+
 ### **REGISTERS**
+
+<br>
 
 **RIP**  
 The RIP register is the instruction pointer register. It holds the current offset in the file that the interpreter is reading from.

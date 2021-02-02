@@ -72,7 +72,7 @@ cleanup:
 void print_regs(){
     int i = 0;
 
-    printf("\e[1mRIP\e[0m: %li | \e[1mRSP\e[0m: %li | \e[1mRBP\e[0m: %li | \e[1mRAX\e[0m: %li | \e[1mRBX\e[0m: %li| \e[1mRCX\e[0m: %li| \e[1mRDX\e[0m: %li\n", reg_struct.rip.reg_64, reg_struct.rsp.reg_64, reg_struct.rbp.reg_64, reg_struct.rax.reg_64, reg_struct.rbx.reg_64, reg_struct.rcx.reg_64, reg_struct.rdx.reg_64);
+    printf("\e[1mRIP\e[0m: %li | \e[1mRSP\e[0m: %li | \e[1mRTP\e[0m: %li | \e[1mRBP\e[0m: %li | \e[1mRAX\e[0m: %li | \e[1mRBX\e[0m: %li| \e[1mRCX\e[0m: %li| \e[1mRDX\e[0m: %li\n", reg_struct.rip.reg_64, reg_struct.rsp.reg_64, reg_struct.rtp.reg_64, reg_struct.rbp.reg_64, reg_struct.rax.reg_64, reg_struct.rbx.reg_64, reg_struct.rcx.reg_64, reg_struct.rdx.reg_64);
 
     for(i=0; i<NUM_REG_SIZE; i++){
         printf("\e[1mr%i\e[0m: %li | ", i, reg_struct.rx[i].reg_64);
@@ -86,7 +86,7 @@ void print_stack(){
     int j = 0;
 
     for(i=(long int)stack; i<=reg_struct.rsp.reg_64; i+=STACK_ELEMENT_SIZE){
-        printf("%p: %i", (void *)i, *(int *)i);
+        printf("%p: %li", (void *)i, *(long int *)i);
 
         if(i <= reg_struct.rsp.reg_64 && reg_struct.rsp.reg_64 < i + STACK_ELEMENT_SIZE){
             fputs("\e[32m < RSP\e[0m", stdout);
@@ -97,8 +97,14 @@ void print_stack(){
         if(i <= reg_struct.rax.reg_64 && reg_struct.rax.reg_64 < i + STACK_ELEMENT_SIZE){
             fputs("\e[32m < RAX\e[0m", stdout);
         }
+        if(i <= reg_struct.rbx.reg_64 && reg_struct.rbx.reg_64 < i + STACK_ELEMENT_SIZE){
+            fputs("\e[32m < RBX\e[0m", stdout);
+        }
         if(i <= reg_struct.rcx.reg_64 && reg_struct.rcx.reg_64 < i + STACK_ELEMENT_SIZE){
             fputs("\e[32m < RCX\e[0m", stdout);
+        }
+        if(i <= reg_struct.rdx.reg_64 && reg_struct.rdx.reg_64 < i + STACK_ELEMENT_SIZE){
+            fputs("\e[32m < RDX\e[0m", stdout);
         }
 
         for(j=0; j<NUM_REG_SIZE; j++){

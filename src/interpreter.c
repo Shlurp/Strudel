@@ -4,19 +4,19 @@ char * tokens[] = {"PUSH", "POP", "MOV", "LEA", "CMP", "JMP", "CALL", "JE", "JNE
 char * sizes[] = {"BYTE", "WORD", "DWORD", "QWORD"};
 char * regs[][5] = {{"RIP"},
                     {"RSP"}, 
+                    {"RTP"},
                     {"RBP"}, 
                     {"RAX", "EAX", "AX", "AH", "AL"}, 
                     {"RBX", "EBX", "BX", "BH", "BL"}, 
                     {"RCX", "ECX", "CX", "CH", "CL"}, 
                     {"RDX", "EDX", "DX", "DH", "DL"}};
 
-bool_t tag = false;
-
 int get_token_str(FILE * source, char ** token_str){
     int return_value = 0;
     int buffer_pointer = 0;
     char curr_char = 0;
     bool_t first = true;
+    bool_t str = false;
     char buffer[BUFFER_SIZE] = {0};
 
     while(true){
@@ -25,38 +25,43 @@ int get_token_str(FILE * source, char ** token_str){
             return_value = print_error("\e[31mGET_TOKEN_STR: Fread error\e[0m", -1);
             goto cleanup;
         }
-        else if((feof(source)) || ((' ' == curr_char || ',' == curr_char) && !first)){
+        else if((feof(source)) || ((' ' == curr_char || ',' == curr_char) && !first && !str)){
             break;
         }
-        if('\n' == curr_char && !first){
+        else if('\n' == curr_char && !first){
             newline = true;
             break;
         }
-        else if(';' == curr_char){
-            while('\n' != curr_char && !feof(source)){
-                return_value = rread(&curr_char, sizeof(curr_char), 1, source);
-                if(0 == return_value && !feof(source)){
-                    return_value = print_error("\e[31mGET_TOKEN_STR: Fread error\e[0m", -1);
-                    goto cleanup;
+        else if('"' == curr_char){
+            str = ~str;
+        }
+        if(!str){
+            if(';' == curr_char){
+                while('\n' != curr_char && !feof(source)){
+                    return_value = rread(&curr_char, sizeof(curr_char), 1, source);
+                    if(0 == return_value && !feof(source)){
+                        return_value = print_error("\e[31mGET_TOKEN_STR: Fread error\e[0m", -1);
+                        goto cleanup;
+                    }
+                }
+                
+                if(0 == reg_struct.etp){
+                    continue;
+                }
+                else{
+                    newline = true;
+                    break;
                 }
             }
-            
-            if(0 == reg_struct.etp){
+            else if((' ' == curr_char || ',' == curr_char) && first){
                 continue;
             }
-            else{
-                newline = true;
-                break;
-            }
         }
-        else if('\n' == curr_char && first){
-            continue;
-        }
-        else if((' ' == curr_char || ',' == curr_char) && first){
+        if('\n' == curr_char && first){
             continue;
         }
 
-        if(']' == curr_char && !first){
+        if(']' == curr_char && !first && !str){
             return_value = rseek(source, -1, SEEK_CUR);
             if(-1 == return_value){
                 print_error("\e[31mGET_TOKEN_STR: lseek error\e[0m", 0);
@@ -69,7 +74,7 @@ int get_token_str(FILE * source, char ** token_str){
 
         buffer[buffer_pointer] = curr_char;
 
-        if('[' == curr_char || ']' == curr_char){
+        if(('[' == curr_char || ']' == curr_char) && !str){
             return_value = rread(&curr_char, sizeof(curr_char), 1, source);
             if(0 == return_value && !feof(source)){
                 return_value = print_error("\e[31mGET_TOKEN_STR: Fread error\e[0m", -1);
@@ -162,9 +167,9 @@ int get_next_instruction(FILE * source, instruction_t * instruction){
             instruction->token_type = TOKEN;
             instruction->data.token = i+1;
 
-            if((JMP <= i+1 && i+1 <= JLE) || (TAG == i+1)){
-                tag = true;
-            }
+            /*if((JMP <= i+1 && i+1 <= JLE) || (TAG == i+1)){
+                 = true;
+            }*/
 
             goto cleanup;
         }
@@ -234,24 +239,24 @@ int get_next_instruction(FILE * source, instruction_t * instruction){
         }
     }
 
-    if(!tag){
-        if('-' == token_str[0]){
-            i = 1;
-        }
-        else{
-            i = 0;
-        }
-        for(i; i<token_length; i++){
-            if(token_str[i] < '0' || token_str[i] > '9'){
-                printf("\e[31;1mError\e[0m on line \e[31m%i\e[0m on token: \e[31m%s\e[0m on index: \e[31m%i\e[0m\nExiting...\n", get_curr_line(source), token_str, i);
-                return_value = -1;
-                goto cleanup;
-            }
-
-            instruction->token_type = NUM;
-            instruction->data.num = instruction->data.num * 10 + token_str[i] - '0';
+    j = 1;
+    if('-' == token_str[0]){
+        i = 1;
+    }
+    else{
+        i = 0;
+    }
+    for(i; i<token_length; i++){
+        if(token_str[i] < '0' || token_str[i] > '9'){
+            j = 0;
+            break;
         }
 
+        instruction->token_type = NUM;
+        instruction->data.num = instruction->data.num * 10 + token_str[i] - '0';
+    }
+
+    if(1 == j){
         if('-' == token_str[0]){
             instruction->data.num *= -1;
         }
@@ -264,7 +269,6 @@ int get_next_instruction(FILE * source, instruction_t * instruction){
             goto cleanup;
         }
         memcpy(instruction->data.str, token_str, token_length);
-        tag = false;
     }
 
 cleanup:
@@ -352,6 +356,21 @@ int * get_pointer_value(FILE * source){
             }
         }
 
+        else if(STRING == instructions[reg_struct.etp].token_type){
+            temp = (long int)get_var_value(instructions[reg_struct.etp].data.str);
+            if(first || (TOKEN == instructions[reg_struct.etp-1].token_type && ADD == instructions[reg_struct.etp-1].data.token)){
+                return_value += temp;
+            }
+            else if(TOKEN == instructions[reg_struct.etp-1].token_type && SUB == instructions[reg_struct.etp-1].data.token){
+                return_value -= temp;
+            }
+            else{
+                printf("\e[31;1mError\e[0m on line \e[31m%i\e[0m: unexpected token value\n", get_curr_line(source));
+                return_value = FAIL;
+                goto cleanup;
+            }
+        }
+
         reg_struct.etp ++;
         first = false;
     }
@@ -394,7 +413,7 @@ int execute_instructions(FILE * source){
         case PUSH: {
             reg_struct.etp ++;
             if(NUM == instructions[reg_struct.etp].token_type){
-                *((int *)reg_struct.rsp.reg_64) = instructions[1].data.num;
+                *((long int *)reg_struct.rsp.reg_64) = instructions[1].data.num;
             }
             else if(REGISTER == instructions[reg_struct.etp].token_type){
                 return_value = get_reg(&temp_register);
@@ -647,8 +666,6 @@ int execute_instructions(FILE * source){
                 goto cleanup;
             }
 
-            tag = false;
-
             break;
         }
 
@@ -668,6 +685,12 @@ int execute_instructions(FILE * source){
                 printf("\e[31mError\e[0m on line \e[31m%i\e[0m: expected string\n", get_curr_line(source));
                 return_value = -1;
                 goto cleanup;
+            }
+
+            temp = strncmp(instructions[reg_struct.etp].data.str, "WRITE", BUFFER_SIZE);
+            if(0 == temp){
+                reg_struct.rax.reg_32[0] = write(reg_struct.rax.reg_32[0], (void *)reg_struct.rbx.reg_64, reg_struct.rcx.reg_64);
+                break;
             }
 
             temp = get_jump_offset(instructions[reg_struct.etp].data.str);
@@ -866,6 +889,16 @@ int execute_instructions(FILE * source){
             break;
         }
 
+        case SET: {
+            reg_struct.etp ++;
+            return_value = set_text_var();
+            if(-1 == return_value){
+                goto cleanup;
+            }
+
+            break;
+        }
+
         default: printf("\e[33mWarning\e[0m on line \e[33m%i\e[0m: unsupported token. (These may be added in later versions)\n", get_curr_line(source)); goto cleanup;
     }
 
@@ -938,8 +971,6 @@ int execute(char * filename, func_flags_t fun_flags){
         }
         memset(instructions, 0, sizeof(instruction_t) * INSTRUCTION_SIZE);
         reg_struct.etp = 0;
-
-        //sleep(1);
     }
 
 cleanup:

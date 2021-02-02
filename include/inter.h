@@ -35,7 +35,7 @@ typedef int bool_t;
 
 typedef enum token_type_e {TOKEN=1, REGISTER, NUM, SIZE, STRING}token_type_t;
 typedef enum token_e {PUSH=1, POP, MOV, LEA, CMP, JMP, CALL, JE, JNE, JG, JGE, JL, JLE, ADD, SUB, TAG, SET, IN, OUT, END}token_t;
-typedef enum register_token_e {RIP=NUM_REG_SIZE, RSP, RBP, RAX, RBX, RCX, RDX}register_token_t;
+typedef enum register_token_e {RIP=NUM_REG_SIZE, RSP, RTP, RBP, RAX, RBX, RCX, RDX}register_token_t;
 typedef enum deref_size_e {BYTE=1, WORD, DWORD, QWORD}deref_size_t;
 
 extern char * tokens[];
@@ -63,7 +63,8 @@ union reg_u{
 typedef struct var_s{
     struct var_s * next;
 
-    void * value;
+    char * name;
+    void * addr;
 }var_t;
 
 typedef struct jump_offset_s{
@@ -82,6 +83,7 @@ struct reg_token_e{
 typedef struct registers_s{
     union reg_u rip;
     union reg_u rsp;
+    union reg_u rtp;
     union reg_u rbp;
     union reg_u rax;
     union reg_u rbx;
@@ -105,14 +107,14 @@ typedef struct instruction_s{
     } data;
 }instruction_t;
 
-
 extern flags_t flags;
 extern bool_t newline;
 
 extern int * stack;
-extern var_t * text;
+extern char * text;
 
 extern jump_offset_t * jump_offsets[BUFFER_SIZE];
+extern var_t * text_vars[BUFFER_SIZE];
 
 extern registers_t reg_struct;
 extern instruction_t instructions[INSTRUCTION_SIZE];
@@ -143,6 +145,8 @@ int insert_jump_offset(char * str, off_t offset);
 off_t get_jump_offset(char * str);
 off_t find_tag(FILE * source, char * str);
 int jump(FILE * source);
+int set_text_var();
+void * get_var_value(char * name);
 
 static inline int get_reg(union reg_u ** reg){
     int return_value = 0;
@@ -150,6 +154,7 @@ static inline int get_reg(union reg_u ** reg){
     switch(instructions[reg_struct.etp].data.reg.reg){ 
         case RIP: *reg = &reg_struct.rip; break;
         case RSP: *reg = &reg_struct.rsp; break; 
+        case RTP: *reg = &reg_struct.rtp; break;
         case RBP: *reg = &reg_struct.rbp; break;
         case RAX: *reg = &reg_struct.rax; break; 
         case RBX: *reg = &reg_struct.rbx; break; 
