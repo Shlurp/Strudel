@@ -208,3 +208,23 @@ This behavior could be simulated by using a MOV and LEA/(ADD/SUB) instruction on
 The register RBP is the frame pointer register. When the program first starts, it and RSP have the same value. It is implicitly changed by any instruction. It may only be explicitly changed.   
 Its use is to create stack frames, allowing for the simulation of scopes.  
 Unlike RIP and RSP, it is not really a special register, but it should only be used for stack-frame purposes. 
+
+<br>
+
+***
+
+**All Registers**  
+The following is a list of all of the registers that Dumdum allows you to access:  
+The following registers only support their R** register (ie. registers like EIP do not exist);
+
++ **RIP** - Instruction pointer (do not alter, only use PUSH and POP with this)
++ **RSP** - Stack pointer
++ **RBP** - Stack frame pointer
++ **RTP** - Text pointer (points to the next area to be allocated in the text data section)
+
+The following are normal registers with R\*X, E\*X, \*X, *L, *H
++ **RAX**
++ **RBX**
++ **RCX**
++ **RDX**
++ **r0** - **r10**

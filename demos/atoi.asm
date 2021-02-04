@@ -36,7 +36,7 @@ JE close                ; Jump to end of loop if CL
 
 PUSH RBX                ; Push RBX (we need to change it for MUL)
 MOV RBX 10              ; Set RBX to 10
-CALL MUL                ; Call MUL function (RAX *= 10)
+CALL mul                ; Call mul function (RAX *= 10)
 
 LEA RAX [RAX + RCX - r0]; RAX += RCX - '0'
 POP RBX                 ; Set RBX to original value
@@ -54,7 +54,7 @@ POP RIP                 ; Restore instruction pointer
 
 ; ---------
 
-TAG MUL                 ; MUL function tag
+TAG mul                 ; mul function tag
                         ; Parameters:
                         ; RAX: number 1 
                         ; RBX: number 2

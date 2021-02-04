@@ -1,11 +1,11 @@
 TAG MAIN        ; Entrypoint
-MOV RAX 5       ; FACTORIAL takes its input from RAX
+MOV RAX 6       ; FACTORIAL takes its input from RAX
 CALL FACTORIAL  ; Call FACTORIAL function
 PUSH RAX        ; Push the value returned by FACTORIAL onto the stack
 END             ; Endpoint
 
 
-TAG MUL         ; MUL (multiply) function (input: RAX and RBX, output: RAX * RBX)
+TAG mul         ; mul (multiply) function (input: RAX and RBX, output: RAX * RBX)
 PUSH RBP        ; Push the stack frame pointer onto the stack
 MOV RBP RSP     ; Update stack pointer
 PUSH r1         ; Push values of r1 and r2 onto the stack so they can be returned to their original state
@@ -43,7 +43,7 @@ CMP r1 RBX      ; Compare r1 with RBX
 JG close2       ; If r1 is greater than RBX, exit loop
 PUSH RBX        ; Push RBX onto the stack (so we can get its value later)
 MOV RBX r1      ; Move r1 into RBX
-CALL MUL        ; Call MUL (this returns into RAX, and RBX has the iterator value)
+CALL mul        ; Call mul (this returns into RAX, and RBX has the iterator value)
 POP RBX         ; Restore RBX's original valie
 ADD r1 1        ; Increment the iterator
 JMP open2       ; Jump to the beginning of the loop

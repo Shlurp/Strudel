@@ -1,6 +1,6 @@
 #include "inter.h"
 
-char * tokens[] = {"PUSH", "POP", "MOV", "LEA", "CMP", "JMP", "CALL", "JE", "JNE", "JG", "JGE", "JL", "JLE", "ADD", "SUB", "TAG", "SET", "[", "]", "END"};
+char * tokens[] = {"PUSH", "POP", "MOV", "LEA", "CMP", "JMP", "CALL", "JE", "JNE", "JG", "JGE", "JL", "JLE", "ADD", "SUB", "MUL", "DIV", "TAG", "SET", "[", "]", "END"};
 char * sizes[] = {"BYTE", "WORD", "DWORD", "QWORD"};
 char * regs[][5] = {{"RIP"},
                     {"RSP"}, 
@@ -20,8 +20,8 @@ int get_token_str(FILE * source, char ** token_str){
     char buffer[BUFFER_SIZE] = {0};
 
     while(true){
-        return_value = rread(&curr_char, sizeof(curr_char), 1, source);
-        if(0 == return_value && !feof(source)){
+        curr_char = rgetc(source);
+        if(EOF == curr_char && !feof(source)){
             return_value = print_error("\e[31mGET_TOKEN_STR: Fread error\e[0m", -1);
             goto cleanup;
         }
@@ -38,8 +38,8 @@ int get_token_str(FILE * source, char ** token_str){
         if(!str){
             if(';' == curr_char){
                 while('\n' != curr_char && !feof(source)){
-                    return_value = rread(&curr_char, sizeof(curr_char), 1, source);
-                    if(0 == return_value && !feof(source)){
+                    curr_char = rgetc(source);
+                    if(EOF == curr_char && !feof(source)){
                         return_value = print_error("\e[31mGET_TOKEN_STR: Fread error\e[0m", -1);
                         goto cleanup;
                     }
@@ -75,8 +75,8 @@ int get_token_str(FILE * source, char ** token_str){
         buffer[buffer_pointer] = curr_char;
 
         if(('[' == curr_char || ']' == curr_char) && !str){
-            return_value = rread(&curr_char, sizeof(curr_char), 1, source);
-            if(0 == return_value && !feof(source)){
+            curr_char = rgetc(source);
+            if(EOF == curr_char && !feof(source)){
                 return_value = print_error("\e[31mGET_TOKEN_STR: Fread error\e[0m", -1);
                 goto cleanup;
             }
@@ -841,6 +841,8 @@ int execute_instructions(FILE * source){
             break;
         }
         
+        case DIV:
+        case MUL:
         case SUB:
         case ADD: {
             i = reg_struct.etp;
@@ -878,11 +880,12 @@ int execute_instructions(FILE * source){
                 temp1 = instructions[reg_struct.etp].data.num;
             }
 
-            if(ADD == instructions[i].data.token){
-                temp += temp1;
-            }
-            else if(SUB == instructions[i].data.token){
-                temp -= temp1;
+            switch(instructions[i].data.token){
+                case ADD: temp += temp1; break;
+                case SUB: temp -= temp1; break;
+                case MUL: temp *= temp1; break;
+                case DIV: temp /= temp1; break;
+                default: break;
             }
 
             return_value = set_reg_value(r3, temp, i+1);
