@@ -105,4 +105,12 @@ And the value is moved into `RAX`, so `RAX` now equals 989.
 
 ***
 
+Here's a quick [demo](../../demos/tutorials/push_pop.asm) of the `PUSH` and `POP` instructions.  
+To run:  
+```
+$ ./dum -si demos/tutorials/push_pop.asm
+```
+
+***
+
 That's it for pushing and popping. Their uses and benefits will become a lot more clear in the future.

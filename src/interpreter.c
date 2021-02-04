@@ -687,13 +687,27 @@ int execute_instructions(FILE * source){
 
             temp = strncmp(instructions[reg_struct.etp].data.str, "WRITE", BUFFER_SIZE);
             if(0 == temp){
-                reg_struct.rax.reg_32[0] = write(reg_struct.rax.reg_32[0], (void *)reg_struct.rbx.reg_64, reg_struct.rcx.reg_64);
+                reg_struct.rax.reg_64 = write(reg_struct.rax.reg_32[0], (void *)reg_struct.rbx.reg_64, reg_struct.rcx.reg_64);
                 break;
             }
             
             temp = strncmp(instructions[reg_struct.etp].data.str, "READ", BUFFER_SIZE);
             if(0 == temp){
-                reg_struct.rax.reg_32[0] = read(reg_struct.rax.reg_32[0], (void *)reg_struct.rbp.reg_64, reg_struct.rcx.reg_64);
+                reg_struct.rax.reg_64 = read(reg_struct.rax.reg_32[0], (void *)reg_struct.rbx.reg_64, reg_struct.rcx.reg_64);
+                break;
+            }
+
+            temp = strncmp(instructions[reg_struct.etp].data.str, "OPEN", BUFFER_SIZE);
+            if(0 == temp){
+                temp = 0;
+
+                for(i=0; i<reg_struct.rbx.reg_64; i++){
+                    reg_struct.rsp.reg_64 -= STACK_ELEMENT_SIZE;
+                    temp |= *(long int *)reg_struct.rsp.reg_64;
+                }
+
+                reg_struct.rax.reg_32[0] = open((const char *)reg_struct.rax.reg_64, temp);
+
                 break;
             }
 
@@ -927,6 +941,7 @@ int execute(char * filename, func_flags_t fun_flags){
     int return_value = 0;
     int i = 0;
     off_t entry_off = 0;
+    off_t length = 0;
     FILE * source = NULL;
 
     source = fopen(filename, "r");
@@ -941,13 +956,24 @@ int execute(char * filename, func_flags_t fun_flags){
         goto cleanup;
     }
 
+    return_value = fseek(source, 0, SEEK_END);
+    if(-1 == return_value){
+        return_value = print_error("\e[31mEXECUTE: Fseek error\e[0m", -1);
+        goto cleanup;
+    }
+    length = ftell(source);
+    if(-1 == length){
+        length = print_error("\e[31mEXECUTE: Ftell error\e[0m", -1);
+        goto cleanup;
+    }
+
     return_value = rseek(source, entry_off, SEEK_SET);
     if(-1 == return_value){
         return_value = print_error("\e[31mEXECUTE: Fseek error\e[0m", -1);
         goto cleanup;
     }
 
-    while(!feof(source)){
+    while(reg_struct.rip.reg_64 <= length){
         return_value = get_next_sequence(source);
         if(-1 == return_value){
             goto cleanup;
@@ -978,6 +1004,10 @@ int execute(char * filename, func_flags_t fun_flags){
         }
         memset(instructions, 0, sizeof(instruction_t) * INSTRUCTION_SIZE);
         reg_struct.etp = 0;
+
+        if(feof(source) && reg_struct.rip.reg_64 <= length){
+            clearerr(source);
+        }
     }
 
 cleanup:
