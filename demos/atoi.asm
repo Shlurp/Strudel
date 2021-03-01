@@ -14,6 +14,7 @@ END
 
 ; -------------
 
+TAG test
 TAG ATOI                ; ATOI - ascii to integer function
                         ; parameters:
                         ; RBX - input buffer (this isn't RAX because READ returns the buffer into RBX)

@@ -1,3 +1,6 @@
+#ifndef CONSTS_H
+#define CONSTS_H
+
 #define DEBUG_STR "\e[31mDEBUG\e[0m"
 #define DEBUG (puts(DEBUG_STR));
 
@@ -23,3 +26,5 @@
 #define FAIL ((void *)(-1))
 
 #define ABS(num) ((num < 0) ? -1 * num : num)
+
+#endif

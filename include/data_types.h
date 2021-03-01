@@ -1,12 +1,16 @@
+#ifndef DATATYPES_H
+#define DATATYPES_H
+
 #include "consts.h"
 #include "libs.h"
 
 typedef int bool_t;
 
-typedef enum token_type_e {TOKEN=1, REGISTER, NUM, SIZE, STRING}token_type_t;
+typedef enum token_type_e {TOKEN=1, REGISTER, NUM, SIZE, STRING, FUNCTION}token_type_t;
 typedef enum token_e {PUSH=1, POP, MOV, LEA, CMP, JMP, CALL, JE, JNE, JG, JGE, JL, JLE, ADD, SUB, MUL, DIV, TAG, SET, IN, OUT, END}token_t;
 typedef enum register_token_e {RIP=NUM_REG_SIZE, RSP, RTP, RBP, RAX, RBX, RCX, RDX}register_token_t;
 typedef enum deref_size_e {BYTE=1, WORD, DWORD, QWORD}deref_size_t;
+typedef enum function_e {OPEN=1, READ, WRITE, PRNUM}function_t;
 
 typedef struct flags_s{
     unsigned char zf : 1;
@@ -38,13 +42,13 @@ typedef struct jump_offset_s{
     struct jump_offset_s * next;
 
     char * tag;
-    off_t offset;
+    long int offset;
 }jump_offset_t;
 
-struct reg_token_e{
-    register_token_t reg;
-    int size;
-    int index;
+struct __attribute__((__packed__)) reg_token_s{
+    u_int8_t reg;
+    u_int8_t size;
+    u_int8_t index;
 };
 
 typedef struct registers_s{
@@ -63,13 +67,16 @@ typedef struct registers_s{
 }registers_t;
 
 typedef struct instruction_s{
-    token_type_t token_type;
+    u_int8_t token_type;
 
     union data{
-        token_t token;
-        deref_size_t size;
-        struct reg_token_e reg;
+        u_int8_t token;
+        u_int8_t size;
+        struct reg_token_s reg;
         long int num;
         char * str;
+        u_int8_t function;
     } data;
 }instruction_t;
+
+#endif

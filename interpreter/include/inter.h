@@ -1,23 +1,8 @@
-#include "libs.h"
-#include "consts.h"
-#include "data_types.h"
+#include "global_libs.h"
 
-extern char * tokens[];
-extern char * regs[][5];
+extern off_t code_start;
 
-extern flags_t flags;
-extern bool_t newline;
-
-extern int * stack;
-extern char * text;
-
-extern jump_offset_t * jump_offsets[BUFFER_SIZE];
-extern var_t * text_vars[BUFFER_SIZE];
-
-extern registers_t reg_struct;
-extern instruction_t instructions[INSTRUCTION_SIZE];
-
-int get_next_instruction(FILE * source, instruction_t * instruction);
+int get_next_instruction(FILE * source, instruction_t * instruction, int line_no);
 
 int init();
 void print_help();
@@ -32,16 +17,9 @@ unsigned long hash(unsigned char * str);
 int insert_jump_offset(char * str, off_t offset);
 off_t get_jump_offset(char * str);
 off_t find_tag(FILE * source, char * str);
-int jump(FILE * source);
+int jump(FILE * source, int line_no);
 int set_text_var();
 void * get_var_value(char * name);
-
-static inline int print_error(char * prompt, int return_value){
-    perror(prompt);
-    printf("(Errno %i)\n", errno);
-
-    return return_value;
-}
 
 static inline int is_whitespace(char c){
     return (c == ' ' || c == '\n');
@@ -55,7 +33,7 @@ static inline int get_reg(union reg_u ** reg){
         case RSP: *reg = &reg_struct.rsp; break; 
         case RTP: *reg = &reg_struct.rtp; break;
         case RBP: *reg = &reg_struct.rbp; break;
-        case RAX: *reg = &reg_struct.rax; break; 
+        case RAX: *reg = &reg_struct.rax; break;
         case RBX: *reg = &reg_struct.rbx; break; 
         case RCX: *reg = &reg_struct.rcx; break; 
         case RDX: *reg = &reg_struct.rdx; break; 
