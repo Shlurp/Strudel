@@ -1,14 +1,43 @@
 #include "comp.h"
 
 int main(int argc, char ** argv){
-    if(argc < 3){
-        printf("\e[31mUsage\e[0m: $ %s <source> <dest>\n", argv[0]);
+    char * dest = "a.out";
+    int i = 0;
+    int j = 0;
+    int src_index = 0;
+    int dest_len = 0;
+    bool_t dest_raised = false;
+    func_flags_t fun_flags = {0};
+
+    if(argc < 2){
+        printf("\e[31mUsage\e[0m: $ %s <source> ...\n", argv[0]);
         goto cleanup;
     }
 
+    for(i=1; i<argc; i++){
+        j = 0;
+        if('-' == argv[i][0]){
+            for(j=1; argv[i][j] != 0 && !dest_raised; j++){
+                switch(argv[i][j]){
+                    case 'i': fun_flags.print_instructions = 1; break;
+                    case 'h': print_help(); goto cleanup;
+                    case 'o': dest_raised = true; break;
+                }
+            }
+        }
+        else{
+            src_index = i;
+        }
+        if(dest_raised && argv[i][j] != 0){
+            dest_len = strnlen(argv[i]+j, BUFFER_SIZE);
+            dest = calloc(dest_len + 1, sizeof(char));
+            memcpy(dest, argv[i]+j, dest_len);
+            dest_raised = false;
+        }
+    }
+
     init();
-    
-    compile(argv[1], argv[2]);
+    compile(argv[src_index], dest, fun_flags);
 
 cleanup:
     exit(0);

@@ -310,7 +310,7 @@ cleanup:
     return return_value;
 }
 
-int manage_sequence(file_t * source, int compiled_fd, int * line_no){
+int manage_sequence(file_t * source, int compiled_fd, int * line_no, func_flags_t fun_flags){
     int error_check = 0;
     off_t offset = 0;
     long int value = 0;
@@ -318,6 +318,10 @@ int manage_sequence(file_t * source, int compiled_fd, int * line_no){
     error_check = get_next_sequence(source, line_no);
     if(-1 == error_check){
         goto cleanup;
+    }
+
+    if(fun_flags.print_instructions){
+        print_instructions();
     }
 
     reg_struct.etp = 0;
@@ -449,7 +453,7 @@ cleanup:
     return error_check;
 }
 
-int compile(char * source_name, char * compiled_name){
+int compile(char * source_name, char * compiled_name, func_flags_t fun_flags){
     int error_check = 0;
     file_t * source = NULL;
     int compiled_fd = -1;
@@ -487,13 +491,12 @@ int compile(char * source_name, char * compiled_name){
 
     while(!MF_eof(source)){
         i ++;
-        error_check = manage_sequence(source, temp_fd, &i);
+        error_check = manage_sequence(source, temp_fd, &i, fun_flags);
         if(-1 == error_check){
             goto cleanup;
         }
     }
 
-    print_variables(true);
     for(i=0; i<BUFFER_SIZE; i++){
         curr_var = variables[i];
         

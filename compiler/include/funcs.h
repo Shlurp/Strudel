@@ -4,6 +4,8 @@
 #define MF_ungetc(file) (file->offset --)
 #define MF_eof(file) ((file->offset > file->length) ? 1 : 0)
 
+void print_help();
+
 unsigned long hash(unsigned char * str);
 
 file_t * MF_open(char * path);
@@ -23,7 +25,7 @@ int append_variable_to_data(char * value, token_type_t size, int line_no);
 
 int init();
 
-int compile(char * source_name, char * compiled_name);
+int compile(char * source_name, char * compiled_name, func_flags_t fun_flags);
 
 void print_instructions();
 

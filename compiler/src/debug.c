@@ -18,6 +18,9 @@ void print_instruction(instruction_t instruction){
         case STRING:
             puts("STRING");
             break;
+        case FUNCTION:
+            puts("FUNCTION");
+            break;
 
         default:
             puts("\n\e[31mINVALID TOKEN TYPE\e[0m");
@@ -52,6 +55,9 @@ void print_instruction(instruction_t instruction){
     }
     else if(STRING == instruction.token_type){
         printf("    TAG: %s\n", instruction.data.str);
+    }
+    else if(FUNCTION == instruction.token_type){
+        printf("    FUNCTION: %s\n", functions[instruction.data.function-1]);
     }
     
     else{

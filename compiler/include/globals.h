@@ -6,5 +6,6 @@
 #include "data_types.h"
 
 extern variable_t * variables[BUFFER_SIZE];
+char * functions[4];
 
 #endif
