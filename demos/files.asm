@@ -39,4 +39,6 @@ CALL WRITE                          ; Call predefined WRITE function
 
 END                                 ; Endpoint
 
-; Run: ./dum -s demos/files.asm (scroll up to see the output)
+; Run: 
+; $ ./cstru demos/files.asm 
+; $ ./stru -s a.out (scroll up to see the output)

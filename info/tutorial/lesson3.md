@@ -30,7 +30,8 @@ Is valid.
 For a demo on the `MOV` instruction, look [here](../../demos/tutorials/mov.asm)  
 To run:  
 ```
-$ ./dum -sr demos/tutorials/mov.asm
+$ ./cstru demos/tutorials/mov.asm
+$ ./stru -sr a.out
 ```
 
 **Challenge:**

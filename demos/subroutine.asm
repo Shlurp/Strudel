@@ -27,4 +27,6 @@ POP RIP         ; The instruction pointer was pushed onto the stack by CALL, and
 ;   int y = 999; 
 ; }
 ;
-; Run: $dum -sir demos/subroutine.asm
+; Run: 
+; $ ./cstru -i demos/subroutine.asm
+; $ ./stru -sr a.out

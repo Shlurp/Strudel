@@ -444,9 +444,11 @@ int manage_sequence(file_t * source, int compiled_fd, int * line_no, func_flags_
     }
 
 cleanup:
-    for(reg_struct.etp++; reg_struct.etp < INSTRUCTION_SIZE; reg_struct.etp++){
-        if(instructions[reg_struct.etp].token_type != NONE){
-            puts("\e[33mWarning:\e[0m extra token (will be ignored)");
+    if(-1 != error_check){
+        for(reg_struct.etp++; reg_struct.etp < INSTRUCTION_SIZE; reg_struct.etp++){
+            if(instructions[reg_struct.etp].token_type != NONE){
+                puts("\e[33mWarning:\e[0m extra token (will be ignored)");
+            }
         }
     }
 

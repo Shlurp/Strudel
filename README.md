@@ -24,7 +24,10 @@ This will:
 + Enter that directory
 + Compile the program
 
-You will get two compiled programs: `stru` and `cstru`. To check if they are working correctly, execute the following:
+You will get two compiled programs: `stru` and `cstru`.   
++ `cstru` is the compiler for Strudel. It converts Strudel source code into bytecode.  
++ `stru` executes the bytecode compiled by `cstru`.
+To check if they are working correctly, execute the following:
 ```sh
 $ ./cstru demos/hello_world.asm
 $ ./stru a.out

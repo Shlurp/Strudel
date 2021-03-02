@@ -108,7 +108,8 @@ And the value is moved into `RAX`, so `RAX` now equals 989.
 Here's a quick [demo](../../demos/tutorials/push_pop.asm) of the `PUSH` and `POP` instructions.  
 To run:  
 ```
-$ ./dum -si demos/tutorials/push_pop.asm
+$ ./cstru -i demos/tutorials/push_pop.asm
+$ ./stru -s a.out
 ```
 
 ***

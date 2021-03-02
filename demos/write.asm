@@ -39,4 +39,6 @@ MOV QWORD [RSP] 0               ; Set value at the top of the stack to 0
 END                             ; Endpoint
 
 ; In the near future, support for hex values will be implemented, so pushing strings onto the stack will be easier.
-; Run: $dum demos/write.asm
+; Run: 
+; $ ./cstru demos/write.asm
+; $ ./stru a.out

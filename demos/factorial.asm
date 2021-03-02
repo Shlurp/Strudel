@@ -13,7 +13,7 @@ PUSH r2         ;
 MOV r1 0        ; Move 0 into r1 and r2
 MOV r2 0        ; 
 
-TAG open1       ; TAG for loop (as TAGs are global- there is no concept of scopes in Dumdum, 
+TAG open1       ; TAG for loop (as TAGs are global- there is no concept of scopes in Strudel, 
                 ; in order for this tag to not be overwirtten, I gave it a number)
 CMP r1 RBX      ; Compare r1 and RBX
 JGE close1      ; If r1 (the iterator) is larger or equal to the RBX, jump to close1 (break)
@@ -80,5 +80,7 @@ POP RIP         ; Return to the caller
 ;   int fac = factorial(5);
 ; }
 ;
-; Run: $dum -s demos/factorial.asm
+; Run:
+; $ ./cstru demos/factorial.asm
+; $ ./stru -s a.out
 ; It will take longer if you use any other flags, so I recommend reducing the value of RAX (on the second line)

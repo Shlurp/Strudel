@@ -32,4 +32,6 @@ END                 ; End point
 ;
 ; PUSH 0
 ;
-; Run: $dum -srf demos/do_while.asm
+; Run:
+; $ ./cstru demos/do_while.asm
+; $ ./stru -srf a.out
