@@ -7,7 +7,7 @@ Before we delve into those, there's another instruction we must discuss: `CMP`. 
 Simply, this can be written as:  
 > `CMP` \<PARAM 1> \<PARAM 2>  
 
-`CMP` subtracts **PARAM 2** from **PARAM 1**, **without changing either of the parameters, and sets the program's flags accordingly. Dumdum has 2 flags:
+`CMP` subtracts **PARAM 2** from **PARAM 1**, **without changing either of the parameters, and sets the program's flags accordingly. Strudel has 2 flags:
 
 + `ZF` - zero flag. This is set if the result of `CMP` is 0
 + `SF` - sign flag. This is set if the result of `CMP` is *signed*, negative.  
@@ -145,4 +145,4 @@ if(EAX != 10){
 
 ***
 
-That's it for now, next up we'll discuss Dumdum's version of functions.
+That's it for now, next up we'll discuss Strudel's version of functions.

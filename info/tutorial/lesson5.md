@@ -1,7 +1,7 @@
 # **LESSON 5**
 *TAGs, jumps, and calls*
 
-One of the most important parts of many languages is the ability to create conditions and functions. While most of the time these two features are seperate, in Dumdum, they are very closely linked. Despite this, these two features have nuances that must be discussed in more detail; they cannot be done justice in one file.
+One of the most important parts of many languages is the ability to create conditions and functions. While most of the time these two features are seperate, in Strudel, they are very closely linked. Despite this, these two features have nuances that must be discussed in more detail; they cannot be done justice in one file.
 
 First off, the feature that makes both functions and conditions work is the `TAG`. A `TAG` saves the current offset in a file under a referenceable name. It has one use:  
 `TAG` \<Tag name>  

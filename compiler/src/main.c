@@ -25,7 +25,7 @@ int main(int argc, char ** argv){
                 }
             }
         }
-        else{
+        else if(!dest_raised){
             src_index = i;
         }
         if(dest_raised && argv[i][j] != 0){

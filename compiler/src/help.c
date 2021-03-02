@@ -2,9 +2,9 @@
 
 void print_help(){
     char * prompt = "\n"
-    "\e[32;1mDumDum\e[0m - an educational runtime interpreter with no real goal.\n\n"
+    "\e[32;1mStrudel\e[0m - an educational language with no real use\n\n"
     "\e[1mUsage\e[0m:\n"
-    "\t\e[1mdumc\e[0m [\e[4mOPTION\e[0m]... <\e[4mSRC\e[0m> [\e[4m-o DEST\e[4m]\n"
+    "\t\e[1mcstru\e[0m [\e[4mOPTION\e[0m]... <\e[4mSRC\e[0m> [\e[4m-o DEST\e[4m]\n"
     "Converts SRC into bytecode, which is stored in DEST\n\n"
     "\e[1mFlags\e[0m\n"
     "\t\e[1m-i\e[0m\tShows the parsed instructions after each sequence (before execution)\n"

@@ -21,7 +21,7 @@ As I briefly discussed, some `MOV` instructions require a **SIZE** parameter. Th
 + **DWORD** - (double word) 4 bytes
 + **QWORD** - (quad word) 8 bytes  
 
-Another important note is that pointer arithmetic is supported in Dumdum. A `MOV` instruction like:  
+Another important note is that pointer arithmetic is supported in Strudel. A `MOV` instruction like:  
 > `MOV` QWORD RAX [RSP - 8]  
 
 Is valid. 

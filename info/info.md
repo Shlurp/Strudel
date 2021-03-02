@@ -1,4 +1,4 @@
-# **DUMDUM**
+# **STRUDEL**
 
 This "language" is meant to be  similar to intel's x86 assembly language. It in no way *is* an assembly language, and is meant to be used (and made) for learning purposes.
 
@@ -143,6 +143,22 @@ The stack after execution will look like:
 The following are all of the predefined functions:
 <br>
 
+**OPEN**  
+The open function calls C's standard `open` function.
++ **PARAMS**:
+    + RAX - the name of the file to open
+    + RBX - the number of flags to open the file with
+    + The flags will be popped from the stack and or'd together
++ **RETURNS**: a file descriptor of the opened file into EAX.
+
+**READ**  
+The read function calls C's standard `read` function.
++ **PARAMS**:
+    + EAX - the file descriptor to read from
+    + RBX - a pointer to the area of memory to read into
+    + RCX - the number of bytes to read
+
+
 **WRITE**  
 The write function calls C's standard `write` function.
 + **PARAMS**:
@@ -150,6 +166,13 @@ The write function calls C's standard `write` function.
     + RBX - a pointer to the data to write
     + RCX - the number of bytes to write
 + **RETURNS**: the number of bytes written into EAX.
+
+
+**PRNUM**  
+The prnum fnction calls `printf("%li")` with RAX as input.
++ **PARAMS**:
+    + RAX - the number to print
++ **RETURNS**: `void`
 
 ***
 <br>
@@ -214,7 +237,7 @@ Unlike RIP and RSP, it is not really a special register, but it should only be u
 ***
 
 **All Registers**  
-The following is a list of all of the registers that Dumdum allows you to access:  
+The following is a list of all of the registers that Strudel allows you to access:  
 The following registers only support their R** register (ie. registers like EIP do not exist);
 
 + **RIP** - Instruction pointer (do not alter, only use PUSH and POP with this)

@@ -15,7 +15,7 @@ LEA RCX [RAX + RBX]
 
 `RCX` will now be equal to 3. 
 
-**AS OF NOW, LEA doesn't support multiplication or division, as Dumdum doesn't support the order of operations**
+**AS OF NOW, LEA doesn't support multiplication or division, as Strudel doesn't support the order of operations**
 
 Now, while `LEA` may not support arithmetic operations, there are instructions that do:
 + `ADD` \<REG 1> \<REG 2 / NUM> - Adds **REG 2** or **NUM** to **REG 1**

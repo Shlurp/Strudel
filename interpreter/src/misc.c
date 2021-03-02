@@ -9,7 +9,7 @@ instruction_t instructions[INSTRUCTION_SIZE] = {0};
 jump_offset_t * jump_offsets[BUFFER_SIZE] = {0};
 var_t * text_vars[BUFFER_SIZE] = {0};
 off_t code_start = 0;
-char * magic = "DUMDUM";
+char * magic = "STRUDEL";
 int magic_len = 0;
 int version[3] = {0, 0, 0};
 int oldest_compatible[3] = {0, 0, 0};
@@ -34,9 +34,9 @@ cleanup:
 
 void print_help(){
     char * prompt = "\n"
-    "\e[32;1mDumDum\e[0m - an educational runtime interpreter with no real goal.\n\n"
+    "\e[32;1mStrudel\e[0m - an educational language with no real use\n\n"
     "\e[1mUsage\e[0m:\n"
-    "\t\e[1mdum\e[0m [\e[4mOPTION\e[0m]... <\e[4mFILE\e[0m>\n"
+    "\t\e[1mstru\e[0m [\e[4mOPTION\e[0m]... <\e[4mFILE\e[0m>\n"
     "Interprets FILE\n\n"
     "\e[1mFlags\e[0m\n"
     "\t\e[1m-s\e[0m\tShows the stack after each sequence (after execution)\n"

@@ -60,6 +60,7 @@ There are a few tags that should not be overwritten (do not use `TAG` on them), 
 + `OPEN` - this is a predefined function. We will discuss it later.
 + `READ` - this is a predefined function. We will discuss it later.
 + `WRITE` - this is a predefined function. We will discuss it later.
++ `PRNUM` - this is a predefined function. We will discuss it later.
 
 Do not name tags with instruction names (ie. tags like `TAG MUL` will result in an error, as `MUL` is already an instruction)
 

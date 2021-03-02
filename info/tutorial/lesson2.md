@@ -9,7 +9,7 @@ The two most important instructions when dealing with the stack are `PUSH` and `
 
 ## **PUSH** 
 
-As discussed earlier, the `RSP` register stores the address of the top of the stack (in reality, the stack grows downwards, but in Dumdum, it grows upwards). But what constitutes as the "top" of the stack? Is the end of the memory allocated? Well, really the top of the stack is defined by the last `PUSH` or `POP`. Allow me to explain:  
+As discussed earlier, the `RSP` register stores the address of the top of the stack (in reality, the stack grows downwards, but in Strudel, it grows upwards). But what constitutes as the "top" of the stack? Is the end of the memory allocated? Well, really the top of the stack is defined by the last `PUSH` or `POP`. Allow me to explain:  
 When you `PUSH` a value onto the stack, you set the value at `RSP` to whatever you're pushing, and then it increments `RSP` by 8 (the size of the elements on the stack).  
 Let's say this is what your stack looked like:
 

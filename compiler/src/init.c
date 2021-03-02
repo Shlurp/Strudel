@@ -3,7 +3,7 @@
 int * stack = NULL;
 char * text = NULL;
 
-char * magic = "DUMDUM";
+char * magic = "STRUDEL";
 int magic_len = 0;
 int version[3] = {0, 0, 0};
 int oldest_compatible[3] = {0, 0, 0};

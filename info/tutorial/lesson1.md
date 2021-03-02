@@ -3,20 +3,20 @@
 
 <br>
 
-In these "lessons", I will attempt to explain to newcomers how to use Dumdum and how the internals operate.  
+In these "lessons", I will attempt to explain to newcomers how to use Strudel and how the internals operate.  
 First, it's important to understand the three methods of data storage:
 
-+ **Registers** - Registers are fixed-sized areas of memory (in reality they're stored in devices, Dumdum's registers simulate a CPU's registers) that are quick to access. They are the "final stage" of memory: you should only move values into registers when you need them. Registers should be changing constantly, if you need long-term memory, use one of the following:
++ **Registers** - Registers are fixed-sized areas of memory (in reality they're stored in devices, Strudel's registers simulate a CPU's registers) that are quick to access. They are the "final stage" of memory: you should only move values into registers when you need them. Registers should be changing constantly, if you need long-term memory, use one of the following:
 
 + **The Stack** - The stack is an area of memory that provides quick and simple memory access. The stack allows you to push and pop values off of it, along with random access. It is for the most part what is responsible for the scoping of your functions.
 
-+ **The Text Data Section** - Constant values like strings and constants are stored here usually, but Dumdum allows these values to be mutable. The primary purpose of the Text section in Dumdum is to allow you to create strings.
++ **The Text Data Section** - Constant values like strings and constants are stored here usually, but Strudel allows these values to be mutable. The primary purpose of the Text section in Strudel is to allow you to create strings.
 
 *** 
 
 ## **Registers**
 
-Registers are slightly more complicated then your average var. Each register is actually several registers. A diagram of a Dumdum register looks like:
+Registers are slightly more complicated then your average var. Each register is actually several registers. A diagram of a Strudel register looks like:
 
 ```
                     R*X
@@ -33,7 +33,7 @@ Registers are slightly more complicated then your average var. Each register is 
 ```
 (The * is replaced depending on the register, for example R**A**X)  
 Each tile is one byte.  
-There are several reasons for this structure: backwards compatability, quick indexing, and more. The reason Dumdum uses it is because Intel does, and Dumdum is just meant to be a simple Assembly-similar language.  
+There are several reasons for this structure: backwards compatability, quick indexing, and more. The reason Strudel uses it is because Intel does, and Strudel is just meant to be a simple Assembly-similar language.  
 The following are all of the registers with this structure:
 + `RAX`
 + `RBX`
@@ -49,7 +49,7 @@ In addition to these registers, there are 10 more, but these don't have the stru
 
 All of the above registers are for you to use at your leisure. The following should only hold specific values. Like the registers previously discussed, they are also 64 bit.
 
-+ `RIP` - The instruction pointer. (For now it stores the current offset in the file, in the future Dumdum will hopefully compile into a bytecode, and it will act more like the normal RIP and will store the index of the opcode.) Do not alter this register with arithmetic operations. When you should alter it will be discussed in the future.
++ `RIP` - The instruction pointer. (For now it stores the current offset in the file, in the future Strudel will hopefully compile into a bytecode, and it will act more like the normal RIP and will store the index of the opcode.) Do not alter this register with arithmetic operations. When you should alter it will be discussed in the future.
 + `RSP` - The stack pointer. This points to the top (current position) of the stack. What this means exactly will be discussed later.
 + `RTP` - The text data section pointer. This points to the top of the text data section. Do not alter this register at all.
 + `RBP` - The stack frame pointer. This register isn't really special. The only thing that makes it different than say, `r0`, is that it is intialized with the same value as `RSP`. This register can be used to provide scoping for your functions.

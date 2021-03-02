@@ -1,4 +1,4 @@
-PROJECT_NAME = ../dumc
+PROJECT_NAME = ../cstru
 CC = gcc
 SRC_DIR = ./src
 INCLUDE_DIR = ../include ./include
