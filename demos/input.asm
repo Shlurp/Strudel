@@ -3,6 +3,7 @@ TAG MAIN                    ; Entrypoint
 SET red "\e[31m"                ; Red ansi sequence
 SET reset "\e[0m"               ; Reset ansi sequence
 SET end_msg "That's it folks\n" ; Message
+SET end 0                       ; End of sets
 
 LEA RBX [RSP]
 ADD RSP 64                  ; Allocate mem for buffer
@@ -34,7 +35,7 @@ CALL WRITE                  ; Write the sequence
 
 MOV EAX 1                   ; Move stdout fd into EAX
 LEA RBX [end_msg]           ; Move end message string into RBX
-LEA RCX [RTP - end_msg]     ; Move length of end_msg into RCX
+LEA RCX [end - end_msg]     ; Move length of end_msg into RCX
 
 CALL WRITE                  ; Write the message...
 

@@ -9,12 +9,12 @@ MOV EAX 0               ; Set EAX to stdin fd
 
 CALL READ               ; READ from stdin
 CALL ATOI               ; Call ATOI
+CALL PRNUM              ; Prints EAX, the integer version of the input
 
 END
 
 ; -------------
 
-TAG test
 TAG ATOI                ; ATOI - ascii to integer function
                         ; parameters:
                         ; RBX - input buffer (this isn't RAX because READ returns the buffer into RBX)
@@ -55,7 +55,7 @@ POP RIP                 ; Restore instruction pointer
 
 ; ---------
 
-TAG mul                 ; mul function tag
+TAG mul                 ; mul function tag (this isn't useful now, this was written before the MUL instruction)
                         ; Parameters:
                         ; RAX: number 1 
                         ; RBX: number 2

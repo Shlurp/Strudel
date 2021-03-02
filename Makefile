@@ -1,26 +1,16 @@
-PROJECT_NAME = dum
-CC = gcc
-SRC_DIR = ./src
-INCLUDE_DIR = ./include
-OBJ_DIR = ./obj
-CFLAGS = -I$(INCLUDE_DIR)
+COMP_DIR = compiler
+INTER_DIR = interpreter
 
-DEPS = $(wildcard $(INCLUDE_DIR)/*.h)
-_OBJ = $(wildcard $(SRC_DIR)/*.c)
-OBJ := $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(_OBJ))
+all: compiler interpreter
 
-all: $(OBJ_DIR) $(PROJECT_NAME)
+compiler:
+	make -C $(COMP_DIR)
 
-$(OBJ_DIR):
-	mkdir $(OBJ_DIR)
-
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c $(DEPS)
-	$(CC) -c -Wall $(CFLAGS) $< -o $@
-
-$(PROJECT_NAME): $(OBJ)
-	$(CC) $(CFLAGS) $^ -o $@
+interpreter:
+	make -C $(INTER_DIR)
 
 clean:
-	rm $(OBJ_DIR)/*.o
+	rm -r $(COMP_DIR)/obj/*.o
+	rm -r $(INTER_DIR)/obj/*.o
 
-.PHONY: all clean
+.PHONY: all compiler interpreter

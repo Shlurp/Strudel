@@ -10,7 +10,7 @@ CALL OPEN                           ; Call predefined OPEN function
                                     ; RBX - the number of flags to open the file with
                                     ; Returns: (in EAX) the file descriptor of the file opened
                                     ; Notes: in order to open the file with flags (eg. O_RDWR), push each flag onto
-                                    ; the stack, and set RBX to the number of flags psuhed. These flags will all be and'd together
+                                    ; the stack, and set RBX to the number of flags pushed. These flags will all be or'd together
 
 PUSH EAX                            ; Push the file descriptor returned onto the stack (for larger programs so it can be accessed again)
 
