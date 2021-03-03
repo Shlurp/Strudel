@@ -1,42 +1,42 @@
-TAG MAIN                    ; Entrypoint
-
 SET red "\e[31m"                ; Red ansi sequence
 SET reset "\e[0m"               ; Reset ansi sequence
 SET end_msg "That's it folks\n" ; Message
 SET end 0                       ; End of sets
 
-LEA RBX [RSP]
-ADD RSP 64                  ; Allocate mem for buffer
-MOV EAX 0                   ; Move file descriptor for stdin into eax
-MOV RCX 64                  ; Ready RCX reg for READ func call
+TAG MAIN                    ; Entrypoint
 
-CALL READ                   ; Call READ predefined function
+    LEA RBX [RSP]
+    ADD RSP 64                  ; Allocate mem for buffer
+    MOV EAX 0                   ; Move file descriptor for stdin into eax
+    MOV RCX 64                  ; Ready RCX reg for READ func call
 
-PUSH RBX                    ; Push RBX onto the stack (to be popped later)
-PUSH EAX                    ; Push EAX (the number of bytes read) onto the stack (to be popped later)
+    CALL READ                   ; Call READ predefined function
 
-LEA RBX [red]               ; Move pointer to red string into RBX
-LEA RCX [reset - red]       ; Move length of red string into RCX
-MOV EAX 1                   ; Move 1 (stdout fd) into EAX
+    PUSH RBX                    ; Push RBX onto the stack (to be popped later)
+    PUSH EAX                    ; Push EAX (the number of bytes read) onto the stack (to be popped later)
 
-CALL WRITE                  ; Call WRITE predefined function
+    LEA RBX [red]               ; Move pointer to red string into RBX
+    LEA RCX [reset - red]       ; Move length of red string into RCX
+    MOV EAX 1                   ; Move 1 (stdout fd) into EAX
 
-POP RCX                     ; Pop top of stack into RCX (this was previously EAX, the number of bytes read)
-POP RBX                     ; Pop top of stack into RBX (this was the bottom of the stack, where the input was read into)
-MOV EAX 1                   ; Move 1 (stdout fd) into EAX 
+    CALL WRITE                  ; Call WRITE predefined function
 
-CALL WRITE                  ; Call WRITE predefined function
+    POP RCX                     ; Pop top of stack into RCX (this was previously EAX, the number of bytes read)
+    POP RBX                     ; Pop top of stack into RBX (this was the bottom of the stack, where the input was read into)
+    MOV EAX 1                   ; Move 1 (stdout fd) into EAX 
 
-MOV EAX 1                   ; You get the drill 
-LEA RBX [reset]             ; Move the address of the reset ansi sequence into RBX
-LEA RCX [end_msg - reset]   ; Move the length of the sequence into RCX
+    CALL WRITE                  ; Call WRITE predefined function
 
-CALL WRITE                  ; Write the sequence
+    MOV EAX 1                   ; You get the drill 
+    LEA RBX [reset]             ; Move the address of the reset ansi sequence into RBX
+    LEA RCX [end_msg - reset]   ; Move the length of the sequence into RCX
 
-MOV EAX 1                   ; Move stdout fd into EAX
-LEA RBX [end_msg]           ; Move end message string into RBX
-LEA RCX [end - end_msg]     ; Move length of end_msg into RCX
+    CALL WRITE                  ; Write the sequence
 
-CALL WRITE                  ; Write the message...
+    MOV EAX 1                   ; Move stdout fd into EAX
+    LEA RBX [end_msg]           ; Move end message string into RBX
+    LEA RCX [end - end_msg]     ; Move length of end_msg into RCX
+
+    CALL WRITE                  ; Write the message...
 
 END                         ; Endpoint
