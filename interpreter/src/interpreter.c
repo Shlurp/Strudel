@@ -578,6 +578,18 @@ int execute_instructions(FILE * source, int line_no){
             break;
         }
 
+        case JNE: {
+            reg_struct.etp ++;
+            if(!flags.zf){
+                return_value = jump(source, line_no);
+                if(-1 == return_value){
+                    goto cleanup;
+                }
+            }
+
+            break;
+        }
+
         case JLE: {
             reg_struct.etp ++;
             if(flags.zf || flags.sf){
@@ -681,7 +693,7 @@ int execute_instructions(FILE * source, int line_no){
             break;
         }
 
-        default: printf("\e[33mWarning\e[0m on line \e[33m%i\e[0m: unsupported token. (These may be added in later versions)\n", line_no); goto cleanup;
+        default: printf("\e[33mWarning\e[0m on line \e[33m%i\e[0m: unsupported token. (%i) (These may be added in later versions)\n", line_no, instructions[0].data.token); goto cleanup;
     }
 
     reg_struct.etp ++;
@@ -804,8 +816,6 @@ int get_text(FILE * source, long int * map_size){
 
     page_size = getpagesize();
 
-    reg_struct.rtp.reg_64 = (long int)text;
-
     if(text_length > 0){
         if(text_length % page_size == 0){
             *map_size = text_length;
@@ -820,6 +830,7 @@ int get_text(FILE * source, long int * map_size){
             goto cleanup;
         }
 
+        reg_struct.rtp.reg_64 = (long int)text + text_length;
 
         error_check = fread(text, sizeof(char), text_length, source);
         if(0 == error_check && !feof(source) && text_length != 0){
@@ -955,5 +966,5 @@ int main(int argc, char ** argv){
     error_check = execute(argv[file_index], fun_flags);
 
 cleanup:
-    return error_check;
+    exit(error_check);
 }

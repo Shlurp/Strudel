@@ -1,4 +1,4 @@
-SET zero "0"            ; So I can use this for stuff like x - '0'
+SET zero '0'            ; So I can use this for stuff like x - '0'
 
 TAG MAIN
 

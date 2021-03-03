@@ -503,6 +503,12 @@ int compile(char * source_name, char * compiled_name, func_flags_t fun_flags){
         curr_var = variables[i];
         
         while(curr_var != NULL){
+            if(!curr_var->value_set){
+                printf("\e[31mError\e[0m: tag/var \e[31m%s\e[0m is referenced but never set.\n", curr_var->name);
+                error_check = -1;
+                goto cleanup;
+            }
+
             for(j=0; j<curr_var->offsets.length; j++){
                 error_check = lseek(temp_fd, curr_var->offsets.list[j], SEEK_SET);
                 if(-1 == error_check){

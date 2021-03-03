@@ -156,28 +156,62 @@ int get_value(char * variable_name, long int * value){
 int append_variable_to_data(char * value, token_type_t size, int line_no){
     int return_value = 0;
     char buffer[BUFFER_SIZE] = {0};
+    char character = 0;
     int buffer_ptr = 0;
     int str_ptr = 0;
 
     if(STRING == size){
-        if(value[str_ptr] != '"'){
-            printf("\e[31mError\e[0m on line \e[31m%i\e[0m: string expected to start with \", got \e[31m%c\e[0m instead\n", line_no, value[str_ptr]);
-            return_value = -1;
-            goto cleanup;
+        if(value[str_ptr] == '"'){
+            str_ptr ++;
+            while(value[str_ptr] != 0 && value[str_ptr] != '"'){
+                if('\\' == value[str_ptr]){
+                    str_ptr ++;
+
+                    switch(value[str_ptr]){
+                        case 'n': buffer[buffer_ptr] = '\n'; break;
+                        case 'r': buffer[buffer_ptr] = '\r'; break;
+                        case 'b': buffer[buffer_ptr] = '\b'; break;
+                        case 'e': buffer[buffer_ptr] = '\e'; break;
+                        case '\\': buffer[buffer_ptr] = '\\'; break;
+                        case '"': buffer[buffer_ptr] = '"'; break;
+                        default:{
+                            printf("\e[31mError\e[0m on line \e[31m%i\e[0m: unsupported escape code \e[31m\\%c\e[0m\n", line_no, value[str_ptr]);
+                            return_value = -1;
+                            goto cleanup;
+                        }
+                    }
+                }
+                else{
+                    buffer[buffer_ptr] = value[str_ptr];
+                }
+
+
+                buffer_ptr ++;
+                str_ptr ++;
+            }
+
+            if(value[str_ptr] != '"'){
+                printf("\e[31mError\e[0m on line \e[31m%i\e[0m: string expected to end with \", got \e[31m%c\e[0m instead\n", line_no, value[str_ptr]);
+                return_value = -1;
+                goto cleanup;
+            }
+
+            memcpy((void *)reg_struct.rtp.reg_64, buffer, buffer_ptr + 1);
+            reg_struct.rtp.reg_64 += buffer_ptr + 1;
         }
+        else if(value[str_ptr] == '\''){
+            str_ptr ++;
 
-        str_ptr ++;
-
-        while(value[str_ptr] != 0 && value[str_ptr] != '"'){
             if('\\' == value[str_ptr]){
                 str_ptr ++;
 
                 switch(value[str_ptr]){
-                    case 'n': buffer[buffer_ptr] = '\n'; break;
-                    case 'r': buffer[buffer_ptr] = '\r'; break;
-                    case 'b': buffer[buffer_ptr] = '\b'; break;
-                    case 'e': buffer[buffer_ptr] = '\e'; break;
-                    case '\\': buffer[buffer_ptr] = '\\'; break;
+                    case 'n': character = '\n'; break;
+                    case 'r': character = '\r'; break;
+                    case 'b': character = '\b'; break;
+                    case 'e': character = '\e'; break;
+                    case '\\': character = '\\'; break;
+                    case '\'': character = '\''; break;
                     default:{
                         printf("\e[31mError\e[0m on line \e[31m%i\e[0m: unsupported escape code \e[31m\\%c\e[0m\n", line_no, value[str_ptr]);
                         return_value = -1;
@@ -186,22 +220,25 @@ int append_variable_to_data(char * value, token_type_t size, int line_no){
                 }
             }
             else{
-                buffer[buffer_ptr] = value[str_ptr];
+                character = value[str_ptr];
             }
 
-
-            buffer_ptr ++;
             str_ptr ++;
-        }
 
-        if(value[str_ptr] != '"'){
-            printf("\e[31mError\e[0m on line \e[31m%i\e[0m: string expected to end with \", got \e[31m%c\e[0m instead\n", line_no, value[str_ptr]);
+            if(value[str_ptr] != '\''){
+                printf("\e[31mError\e[0m on line \e[31m%i\e[0m: character expected to end with ', got \e[31m%c\e[0m instead\n", line_no, value[str_ptr]);
+                return_value = -1;
+                goto cleanup;
+            }
+
+            *(char *)reg_struct.rtp.reg_64 = character;
+            reg_struct.rtp.reg_64 ++;
+        }
+        else{
+            printf("\e[31mError\e[0m on line \e[31m%i\e[0m: string expected to start with \" or ', got \e[31m%c\e[0m instead\n", line_no, value[str_ptr]);
             return_value = -1;
             goto cleanup;
         }
-
-        memcpy((void *)reg_struct.rtp.reg_64, buffer, buffer_ptr + 1);
-        reg_struct.rtp.reg_64 += buffer_ptr + 1;
     }
     else if(NUM == size){
         *(long int *)reg_struct.rtp.reg_64 = (long int)value;
@@ -213,7 +250,7 @@ int append_variable_to_data(char * value, token_type_t size, int line_no){
         return_value = -1;
         goto cleanup;
     }
-
+    
 cleanup:
     return return_value;
 }

@@ -36,4 +36,4 @@ You should get a bright bold yellow message "Hello World!". If you don't, check 
 
 ## **Documentation**
 The quick documentation of Strudel can be found [here](./info/info.md#strudel)  
-More in depth tutorials can be found [here](./info/tutorial/lesson1.md#lesson-1)
+More in depth tutorials can be found [here](./info/tutorial/)

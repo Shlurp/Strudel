@@ -22,6 +22,7 @@ int main(int argc, char ** argv){
                     case 'i': fun_flags.print_instructions = 1; break;
                     case 'h': print_help(); goto cleanup;
                     case 'o': dest_raised = true; break;
+                    default: printf("\e[31mError\e[0m: Invalid flag (\e[31m-%c\e[0m)\n", argv[i][j]); goto cleanup;
                 }
             }
         }
