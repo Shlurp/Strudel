@@ -5,7 +5,7 @@ One of the most important parts of many languages is the ability to create condi
 
 First off, the feature that makes both functions and conditions work is the `TAG`. A `TAG` saves the current offset in a file under a referenceable name. It has one use:  
 `TAG` \<Tag name>  
-Now referencing the tag **Tag name** will give you the offset of the file at this point. (You cannot `MOV` or `LEA` with a `TAG`, though.) The tag will point to the first character of the next line, so comments do not affect tags. Tags are global, so having two of them in the same file may lead to undefined behavior.  
+Now referencing the tag **Tag name** will give you the offset of the (compiled) file at this point. (You cannot `MOV` or `LEA` with a `TAG`, though.) Tags are global, and the tag will point to the where the last `TAG` is. 
 
 Next, we have the `JMP` instruction. It has one use:  
 `JMP` \<Tag>  

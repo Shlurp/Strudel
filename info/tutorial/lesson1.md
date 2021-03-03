@@ -10,7 +10,7 @@ First, it's important to understand the three methods of data storage:
 
 + **The Stack** - The stack is an area of memory that provides quick and simple memory access. The stack allows you to push and pop values off of it, along with random access. It is for the most part what is responsible for the scoping of your functions.
 
-+ **The Text Data Section** - Constant values like strings and constants are stored here usually, but Strudel allows these values to be mutable. The primary purpose of the Text section in Strudel is to allow you to create strings.
++ **The Data Section** - Constant values like strings and constants are stored here usually, but Strudel allows these values to be mutable. The primary purpose of the data section in Strudel is to allow you to create strings.
 
 *** 
 
@@ -51,7 +51,7 @@ All of the above registers are for you to use at your leisure. The following sho
 
 + `RIP` - The instruction pointer. (For now it stores the current offset in the file, in the future Strudel will hopefully compile into a bytecode, and it will act more like the normal RIP and will store the index of the opcode.) Do not alter this register with arithmetic operations. When you should alter it will be discussed in the future.
 + `RSP` - The stack pointer. This points to the top (current position) of the stack. What this means exactly will be discussed later.
-+ `RTP` - The text data section pointer. This is only used during compilation.
++ `RTP` - The data section pointer. It points to the end of the data section.
 + `RBP` - The stack frame pointer. This register isn't really special. The only thing that makes it different than say, `r0`, is that it is intialized with the same value as `RSP`. This register can be used to provide scoping for your functions.
 
 ***
@@ -62,6 +62,6 @@ The stack is essentially just a large buffer. Every element in the stack is a `l
 
 ***
 
-## **The Text Data Section**
+## **The Data Section**
 
-The Text data section (from now on, Text or Text section) is quite similar to the stack, but it isn't meant to be popped. Its main purpose is to hold global variables and strings.
+The data section is quite similar to the stack, but it isn't meant to be popped. Its main purpose is to hold global variables and strings.

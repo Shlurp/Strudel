@@ -243,7 +243,7 @@ The following registers only support their R** register (ie. registers like EIP 
 + **RIP** - Instruction pointer (do not alter, only use PUSH and POP with this)
 + **RSP** - Stack pointer
 + **RBP** - Stack frame pointer
-+ **RTP** - Text pointer (points to the next area to be allocated in the text data section)
++ **RTP** - Text pointer (points to the next area to be allocated in the text data section during compilation, during execution points to the end of the text data section.)
 
 The following are normal registers with R\*X, E\*X, \*X, *L, *H
 + **RAX**

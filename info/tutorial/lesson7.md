@@ -64,7 +64,8 @@ There are a few tags that should not be overwritten (do not use `TAG` on them), 
 
 Do not name tags with instruction names (ie. tags like `TAG MUL` will result in an error, as `MUL` is already an instruction)
 
-The instruction `END` exits the program, it is necessary so if you have code like:
+The instruction `END` exits the program, it is necessary in all cases.  
+Here's an example of why `END` is useful:
 ```
 TAG MAIN
 

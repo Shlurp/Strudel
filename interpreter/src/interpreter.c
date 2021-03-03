@@ -966,5 +966,9 @@ int main(int argc, char ** argv){
     error_check = execute(argv[file_index], fun_flags);
 
 cleanup:
+    fflush(stdin);
+    fflush(stdout);
+    fflush(stderr);
+    
     exit(error_check);
 }
