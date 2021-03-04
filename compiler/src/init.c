@@ -5,7 +5,7 @@ char * text = NULL;
 
 char * magic = "STRUDEL";
 int magic_len = 0;
-int version[3] = {0, 0, 0};
+int version[3] = {0, 0, 1};
 int oldest_compatible[3] = {0, 0, 0};
 
 int init(){

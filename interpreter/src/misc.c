@@ -11,7 +11,7 @@ var_t * text_vars[BUFFER_SIZE] = {0};
 off_t code_start = 0;
 char * magic = "STRUDEL";
 int magic_len = 0;
-int version[3] = {0, 0, 0};
+int version[3] = {0, 0, 1};
 int oldest_compatible[3] = {0, 0, 0};
 
 int init(){
