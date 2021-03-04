@@ -17,9 +17,10 @@ int append_element(list_t * list, long int element);
 int pop_element(list_t * list, int index);
 void print_list(list_t * list, bool_t new_line);
 
-int insert_variable(char * variable_name, long int value, bool_t insert_value, off_t offset, bool_t insert_offset);
+int insert_variable(char * variable_name, long int value, bool_t istag, bool_t insert_value, off_t offset, bool_t insert_offset);
 void print_variables(bool_t new_line);
 int get_value(char * variable_name, long int * value);
+int get_var(char * var_name, variable_t ** var);
 void free_variables();
 int append_variable_to_data(char * value, token_type_t size, int line_no);
 

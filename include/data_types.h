@@ -6,7 +6,7 @@
 
 typedef int bool_t;
 
-typedef enum token_type_e {TOKEN=1, REGISTER, NUM, SIZE, STRING, FUNCTION}token_type_t;
+typedef enum token_type_e {TOKEN=1, REGISTER, NUM, SIZE, STRING, TAGGEE, FUNCTION}token_type_t;
 typedef enum token_e {PUSH=1, POP, MOV, LEA, CMP, JMP, CALL, JE, JNE, JG, JGE, JL, JLE, ADD, SUB, MUL, DIV, TAG, SET, IN, OUT, END}token_t;
 typedef enum register_token_e {RIP=NUM_REG_SIZE, RSP, RTP, RBP, RAX, RBX, RCX, RDX}register_token_t;
 typedef enum deref_size_e {BYTE=1, WORD, DWORD, QWORD}deref_size_t;

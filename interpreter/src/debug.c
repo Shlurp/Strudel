@@ -18,6 +18,9 @@ void print_instruction(instruction_t instruction){
         case STRING:
             puts("STRING");
             break;
+        case TAGGEE:
+            puts("TAG");
+            break;
 
         default:
             puts("\n\e[31mINVALID TOKEN TYPE\e[0m");
@@ -51,6 +54,9 @@ void print_instruction(instruction_t instruction){
         }
     }
     else if(STRING == instruction.token_type){
+        printf("    VAR: \e[33mIndex\e[0m %li\n", (long int)instruction.data.str);
+    }
+    else if(TAGGEE == instruction.token_type){
         printf("    TAG: \e[33mIndex\e[0m %li\n", (long int)instruction.data.str);
     }
     

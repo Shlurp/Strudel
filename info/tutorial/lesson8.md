@@ -59,5 +59,3 @@ Strudel also supports escape a few escape codes:
 + `\b` - backspace
 + `\e` - escape
 + `\\` - is converted to \
-
-**Tags are also considered variables, so you can be careful if you derefence them. Basically, don't, unless you understand how Strudel works.** This may be changed, it will just require longer compile times.

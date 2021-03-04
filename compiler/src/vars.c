@@ -2,7 +2,7 @@
 
 variable_t * variables[BUFFER_SIZE] = {0};
 
-int insert_variable(char * variable_name, long int value, bool_t insert_value, off_t offset, bool_t insert_offset){
+int insert_variable(char * variable_name, long int value, bool_t istag, bool_t insert_value, off_t offset, bool_t insert_offset){
     int return_value = 0;
     unsigned int name_hash = 0;
     int diff = 0;
@@ -50,6 +50,7 @@ int insert_variable(char * variable_name, long int value, bool_t insert_value, o
         if(insert_value){
             curr_node->value_set = true;
             curr_node->value = value;
+            curr_node->istag = istag;
         }
         else{
             curr_node->value = 0;
@@ -69,6 +70,7 @@ int insert_variable(char * variable_name, long int value, bool_t insert_value, o
         if(insert_value){
             curr_node->value_set = true;
             curr_node->value = value;
+            curr_node->istag = istag;
         }
         else{
             curr_node->value_set = false;
@@ -89,7 +91,12 @@ void print_variables(bool_t new_line){
 
         while(curr_var != NULL){
             if(curr_var->value_set){
-                printf("%s: {%li, ", curr_var->name, curr_var->value);
+                if(curr_var->istag){
+                    printf("#%s: {%li, ", curr_var->name, curr_var->value);
+                }
+                else{
+                    printf("%s: {%li, ", curr_var->name, curr_var->value);
+                }
             }
             else{
                 printf("%s: {~, ", curr_var->name);
@@ -148,6 +155,29 @@ int get_value(char * variable_name, long int * value){
         }
 
         var = var->next;
+    }
+
+    return return_value;
+}
+
+int get_var(char * var_name, variable_t ** var){
+    int return_value = -1;
+    int diff = 0;
+    unsigned int name_hash = 0;
+
+    name_hash = (unsigned int)(hash((unsigned char *)var_name) % BUFFER_SIZE);
+
+    *var = variables[name_hash];
+    while(*var != NULL){
+        diff = strncmp(var_name, (*var)->name, BUFFER_SIZE);
+        if(0 == diff){
+            if((*var)->value_set){
+                return_value = 0;
+            }
+            break;
+        }
+
+        *var = (*var)->next;
     }
 
     return return_value;

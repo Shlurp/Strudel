@@ -22,6 +22,7 @@ typedef struct variable_s{
     char * name;            // Variable name
     bool_t value_set;       // If the value is set
     long int value;         // Value of the variable
+    bool_t istag;           // True if it's a tag, false for string
     list_t offsets;         // Offsets in the file to insert the justified value at
 }variable_t;
 

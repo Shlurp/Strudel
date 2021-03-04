@@ -182,8 +182,8 @@ int jump(FILE * source, int line_no){
     int return_value = 0;
     off_t temp = 0;
 
-    if(STRING != instructions[reg_struct.etp].token_type){
-        printf("\e[31mError\e[0m on line \e[31m%i\e[0m: expected string\n", line_no);
+    if(TAGGEE != instructions[reg_struct.etp].token_type){
+        printf("\e[31mError\e[0m on line \e[31m%i\e[0m: expected tag\n", line_no);
         return_value = -1;
         goto cleanup;
     }

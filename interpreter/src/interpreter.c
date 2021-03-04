@@ -1,4 +1,5 @@
 #include "inter.h"
+#include "termios.h"
 
 char * tokens[] = {"PUSH", "POP", "MOV", "LEA", "CMP", "JMP", "CALL", "JE", "JNE", "JG", "JGE", "JL", "JLE", "ADD", "SUB", "MUL", "DIV", "TAG", "SET", "[", "]", "END"};
 char * sizes[] = {"BYTE", "WORD", "DWORD", "QWORD"};
@@ -33,6 +34,7 @@ int get_next_instruction(FILE * source, instruction_t * instruction, int line_no
         case REGISTER: return_value = rread(&instruction->data.reg, sizeof(instruction->data.reg), 1, source); break;
         case NUM: return_value = rread(&instruction->data.num, sizeof(instruction->data.num), 1, source); break;
         case SIZE: return_value = rread(&instruction->data.size, sizeof(instruction->data.size), 1, source); break;
+        case TAGGEE:
         case STRING: {
             return_value = rread(&instruction->data.str, sizeof(instruction->data.str), 1, source);
             // instruction->data.str = (char *)((long int)text + (long int)instruction->data.str);
@@ -147,6 +149,22 @@ int * get_pointer_value(FILE * source, int line_no){
 
         else if(STRING == instructions[reg_struct.etp].token_type){
             temp = (long int)instructions[reg_struct.etp].data.str + (long int)text;
+            if(first || (TOKEN == instructions[reg_struct.etp-1].token_type && ADD == instructions[reg_struct.etp-1].data.token)){
+                return_value += temp;
+            }
+            else if(TOKEN == instructions[reg_struct.etp-1].token_type && SUB == instructions[reg_struct.etp-1].data.token){
+                return_value -= temp;
+            }
+            else{
+                printf("\e[31;1mError\e[0m on line \e[31m%i\e[0m: unexpected token value\n", line_no);
+                return_value = FAIL;
+                errnum = 1;
+                goto cleanup;
+            }
+        }
+
+        else if(TAGGEE == instructions[reg_struct.etp].token_type){
+            temp = (long int)instructions[reg_struct.etp].data.str;
             if(first || (TOKEN == instructions[reg_struct.etp-1].token_type && ADD == instructions[reg_struct.etp-1].data.token)){
                 return_value += temp;
             }
@@ -482,7 +500,7 @@ int execute_instructions(FILE * source, int line_no){
                     }
                 }
             }
-            else if(STRING == instructions[reg_struct.etp].token_type){
+            else if(TAGGEE == instructions[reg_struct.etp].token_type){
                 temp = (long int)instructions[reg_struct.etp].data.str + code_start;
 
                 *(long int *)reg_struct.rsp.reg_64 = reg_struct.rip.reg_64;
@@ -495,7 +513,7 @@ int execute_instructions(FILE * source, int line_no){
                 }
             }
             else{
-                printf("\e[31mError\e[0m on line \e[31m%i\e[0m: CALL instruction expects string or function\n", line_no);
+                printf("\e[31mError\e[0m on line \e[31m%i\e[0m: CALL instruction expects tag or function\n", line_no);
                 return_value = -1;
                 goto cleanup;
             }
@@ -966,9 +984,7 @@ int main(int argc, char ** argv){
     error_check = execute(argv[file_index], fun_flags);
 
 cleanup:
-    fflush(stdin);
-    fflush(stdout);
-    fflush(stderr);
+    tcflush(STDIN_FILENO, TCIFLUSH);
     
     exit(error_check);
 }

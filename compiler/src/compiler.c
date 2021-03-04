@@ -314,6 +314,7 @@ int manage_sequence(file_t * source, int compiled_fd, int * line_no, func_flags_
     int error_check = 0;
     off_t offset = 0;
     long int value = 0;
+    variable_t * var = NULL;
 
     error_check = get_next_sequence(source, line_no);
     if(-1 == error_check){
@@ -346,7 +347,7 @@ int manage_sequence(file_t * source, int compiled_fd, int * line_no, func_flags_
 
         error_check = insert_variable(instructions[reg_struct.etp].data.str, 
                                       reg_struct.rtp.reg_64 - (long int)text  /*The offset of where the variable will be appended to the text data section*/, 
-                                      true, -1, false);
+                                      false, true, -1, false);
         if(-1 == error_check){
             goto cleanup;
         }
@@ -376,7 +377,7 @@ int manage_sequence(file_t * source, int compiled_fd, int * line_no, func_flags_
             goto cleanup;
         }
 
-        error_check = insert_variable(instructions[reg_struct.etp].data.str, offset, true, -1, false);
+        error_check = insert_variable(instructions[reg_struct.etp].data.str, offset, true, true, -1, false);
         if(-1 == error_check){
             goto cleanup;
         }
@@ -390,11 +391,14 @@ int manage_sequence(file_t * source, int compiled_fd, int * line_no, func_flags_
             print_error("\e[31mMANAGE_SEQUENCE\e[0m: Write error", -1);
             goto cleanup;
         }
+
         for(reg_struct.etp=0; reg_struct.etp < INSTRUCTION_SIZE; reg_struct.etp ++){
-            error_check = write(compiled_fd, &instructions[reg_struct.etp].token_type, sizeof(instructions[reg_struct.etp].token_type));
-            if(-1 == error_check){
-                print_error("\e[31mMANAGE_SEQUENCE\e[0m: Write error", -1);
-                goto cleanup;
+            if(instructions[reg_struct.etp].token_type != STRING && instructions[reg_struct.etp].token_type != TAGGEE){
+                error_check = write(compiled_fd, &instructions[reg_struct.etp].token_type, sizeof(instructions[reg_struct.etp].token_type));
+                if(-1 == error_check){
+                    print_error("\e[31mMANAGE_SEQUENCE\e[0m: Write error", -1);
+                    goto cleanup;
+                }
             }
             
             switch(instructions[reg_struct.etp].token_type){
@@ -403,8 +407,9 @@ int manage_sequence(file_t * source, int compiled_fd, int * line_no, func_flags_
                 case REGISTER: error_check = write(compiled_fd, &instructions[reg_struct.etp].data.reg, sizeof(instructions[reg_struct.etp].data.reg)); break;
                 case NUM: error_check = write(compiled_fd, &instructions[reg_struct.etp].data.num, sizeof(instructions[reg_struct.etp].data.num)); break;
                 case FUNCTION: error_check = write(compiled_fd, &instructions[reg_struct.etp].data.function, sizeof(instructions[reg_struct.etp].data.function)); break;
+                case TAGGEE:
                 case STRING: {
-                    error_check = get_value(instructions[reg_struct.etp].data.str, &value);
+                    error_check = get_var(instructions[reg_struct.etp].data.str, &var);
                     if(-1 == error_check){      // Variable has not been read yet
                         offset = lseek(compiled_fd, 0, SEEK_CUR);
                         if(-1 == offset){
@@ -412,16 +417,27 @@ int manage_sequence(file_t * source, int compiled_fd, int * line_no, func_flags_
                             goto cleanup;
                         }
 
-                        error_check = insert_variable(instructions[reg_struct.etp].data.str, -1, false, offset, true);
+                        error_check = insert_variable(instructions[reg_struct.etp].data.str, -1, false, false, offset, true);
                         if(-1 == error_check){
                             goto cleanup;
                         }
 
                         value = 0;
+                        error_check = write(compiled_fd, &value, sizeof(u_int8_t));
                         error_check = write(compiled_fd, &value, sizeof(value));
                     }
                     else{
-                        error_check = write(compiled_fd, &value, sizeof(value));
+                        if(var->istag){
+                            instructions[reg_struct.etp].token_type = TAGGEE;
+                        }
+
+                        error_check = write(compiled_fd, &instructions[reg_struct.etp].token_type, sizeof(instructions[reg_struct.etp].token_type));
+                        if(-1 == error_check){
+                            print_error("\e[31mMANAGE_SEQUENCE\e[0m: Write error", -1);
+                            goto cleanup;
+                        }
+
+                        error_check = write(compiled_fd, &var->value, sizeof(var->value));
                     }
 
                     free(instructions[reg_struct.etp].data.str);
@@ -466,6 +482,7 @@ int compile(char * source_name, char * compiled_name, func_flags_t fun_flags){
     long int text_size = 0;
     char temp_file_name[FILE_NAME_LEN] = {0};
     char buffer[BUFFER_SIZE] = {0};
+    u_int8_t tag_type = 0;
     bool_t eof = false;
     variable_t * curr_var = NULL;
 
@@ -513,6 +530,19 @@ int compile(char * source_name, char * compiled_name, func_flags_t fun_flags){
                 error_check = lseek(temp_fd, curr_var->offsets.list[j], SEEK_SET);
                 if(-1 == error_check){
                     print_error("\e[31mCOMPILE\e[0m: Lseek error", -1);
+                    goto cleanup;
+                }
+
+                if(curr_var->istag){
+                    tag_type = TAGGEE;
+                }
+                else{
+                    tag_type = STRING;
+                }
+
+                error_check = write(temp_fd, &tag_type, sizeof(tag_type));
+                if(-1 == error_check){
+                    print_error("\e[31mCOMPILE\e[0m: Write error", -1);
                     goto cleanup;
                 }
 
