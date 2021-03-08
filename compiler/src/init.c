@@ -7,7 +7,7 @@ char * magic = "STRUDEL";
 char * obj_magic = "OBJSTRUDEL";
 int obj_magic_len = 0;
 int magic_len = 0;
-int version[3] = {0, 0, 1};
+int version[3] = {0, 1, 0};
 int oldest_compatible[3] = {0, 0, 0};
 
 int page_size = 0;
