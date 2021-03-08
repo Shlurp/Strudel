@@ -54,6 +54,8 @@ int insert_variable(char * variable_name, long int value, bool_t istag, bool_t i
             curr_node->isglobal = isglobal;
         }
         else{
+            curr_node->isglobal = false;
+            curr_node->istag = false;
             curr_node->value_set = false;
             curr_node->value = 0;
         }
@@ -446,8 +448,6 @@ int read_var(int fd, variable_t * var){
     if(-1 == error_check){
         goto cleanup;
     }
-
-    printf("VAR: %s\n%i: %li\n%i, %i\n", var->name, var->value_set, var->value, var->istag, var->isglobal);
 
 cleanup:
     return error_check;

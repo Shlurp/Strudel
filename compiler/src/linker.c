@@ -121,10 +121,6 @@ int linker(char * output, int num_files, char ** file_names){
                     }
 
                     error_check = get_var(curr_file_var.name, &temp_var);
-                    if(-1 == error_check){
-                        puts("\e[33mLinker\e[0m: \e[31mError\e[0m: Unknown");
-                        goto cleanup;
-                    }
                 }
                 else{
                     if(temp_var->value_set && curr_file_var.value_set){
@@ -194,9 +190,10 @@ int linker(char * output, int num_files, char ** file_names){
                     goto cleanup;
                 }
             }
-        }
 
-        // Strings are global and wont work atm - all globals dont work
+            free(curr_file_var.name);
+            free_list(&curr_file_var.offsets);
+        }
 
         error_check = read(curr_fd, &curr_data_len, sizeof(curr_data_len));
         if(-1 == error_check){
@@ -222,7 +219,6 @@ int linker(char * output, int num_files, char ** file_names){
             print_error("\e[31mLINKER\e[0m: Read error", -1);
             goto cleanup;
         }
-        printf("CURR DATA LEN: %li\nTHINGIE: %c\n", curr_data_len, *(char *)curr_data);
         memcpy(text + data_len, curr_data, curr_data_len);
         data_len += curr_data_len;
 
@@ -247,10 +243,50 @@ int linker(char * output, int num_files, char ** file_names){
                 print_error("\e[31mLINKER\e[0m: Write error", -1);
                 goto cleanup;
             }
+            code_len += error_check;
         }
     }
 
-    print_variables(true);
+    for(i=0; i<BUFFER_SIZE; i++){
+        temp_var = variables[i];
+
+        while(temp_var != NULL){
+            if(!temp_var->value_set){
+                printf("\e[31mError\e[0m: Variable \e[31m%s\e[0m referenced but never declared\n", temp_var->name);
+                error_check = -1;
+                goto cleanup;
+            }
+
+            for(j=0; j<temp_var->offsets.length; j++){
+                error_check = lseek(temp_fd, temp_var->offsets.list[j], SEEK_SET);
+                if(-1 == error_check){
+                    print_error("\e[31mLINKER\e[0m: Lseek error", -1);
+                    goto cleanup;
+                }
+
+                if(temp_var->istag){
+                    tag_type = TAGGEE;
+                }
+                else{
+                    tag_type = STRING;
+                }
+
+                error_check = write(temp_fd, &tag_type, sizeof(tag_type));
+                if(-1 == error_check){
+                    print_error("\e[31mLINKER\e[0m: Write error", -1);
+                    goto cleanup;
+                }
+
+                error_check = write(temp_fd, &temp_var->value, sizeof(temp_var->value));
+                if(-1 == error_check){
+                    print_error("\e[31mLINKER\e[0m: Write error", -1);
+                    goto cleanup;
+                }
+            }
+
+            temp_var = temp_var->next;
+        }
+    }
 
     output_fd = open(output, O_RDWR | O_TRUNC | O_CREAT, 0666);
     if(-1 == output_fd){
@@ -282,8 +318,6 @@ int linker(char * output, int num_files, char ** file_names){
         goto cleanup;
     }
 
-
-    printf("LEN OF DATA: %li\nTHING: %c\n", data_len, *text);
     error_check = write(output_fd, &data_len, sizeof(data_len));
     if(-1 == error_check){
         print_error("\e[31mLINKER\e[0m: Write error", -1);
@@ -323,6 +357,12 @@ cleanup:
     if(magic_check != NULL){
         free(magic_check);
     }
+
+    if(0 != temp_file_name[0]){
+        remove(temp_file_name);
+    }
+
+    free_variables();
 
     return error_check;
 }

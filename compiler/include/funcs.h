@@ -33,6 +33,8 @@ int read_var(int fd, variable_t * var);
 
 int init();
 
+int replace_extension(char * filename, char * new_extension, char ** new_filename);
+
 int compile(char * source_name, char * compiled_name, func_flags_t fun_flags);
 int linker(char * output, int num_files, char ** file_names);
 

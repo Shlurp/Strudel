@@ -378,6 +378,7 @@ int manage_sequence(file_t * source, int compiled_fd, int * line_no, func_flags_
         reg_struct.etp ++;
         if(FLAG == instructions[reg_struct.etp].token_type){
             global = true;
+            reg_struct.etp ++;
         }
         else{
             if(STRING != instructions[reg_struct.etp].token_type){
@@ -617,9 +618,6 @@ int compile(char * source_name, char * compiled_name, func_flags_t fun_flags){
         goto cleanup;
     }
     #endif
-
-
-    print_variables(true);
 
     error_check = write_vars(compiled_fd);
     if(-1 == error_check){
