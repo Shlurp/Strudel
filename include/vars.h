@@ -25,4 +25,6 @@ extern int magic_len;
 extern int version[3];
 extern int oldest_compatible[3];
 
+extern int page_size;
+
 #endif

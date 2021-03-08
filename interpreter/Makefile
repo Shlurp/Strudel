@@ -16,10 +16,10 @@ $(OBJ_DIR):
 	mkdir $(OBJ_DIR)
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c $(DEPS)
-	$(CC) -c $(CFLAGS) $< -o $@
+	$(CC) -c -g $(CFLAGS) $< -o $@
 
 $(PROJECT_NAME): $(OBJ)
-	$(CC) $(CFLAGS) $^ -o $@
+	$(CC) -g $(CFLAGS) $^ -o $@
 
 clean:
 	rm $(OBJ_DIR)/*.o

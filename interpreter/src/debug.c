@@ -1,5 +1,18 @@
 #include "inter.h"
 
+char * tokens[] = {"PUSH", "POP", "MOV", "LEA", "CMP", "JMP", "CALL", "JE", "JNE", "JG", "JGE", "JL", "JLE", "ADD", "SUB", "MUL", "DIV", "TAG", "SET", "[", "]", "END"};
+char * sizes[] = {"BYTE", "WORD", "DWORD", "QWORD"};
+char * regs[][5] = {{"RIP"},
+                    {"RSP"}, 
+                    {"RTP"},
+                    {"RBP"}, 
+                    {"RAX", "EAX", "AX", "AH", "AL"}, 
+                    {"RBX", "EBX", "BX", "BH", "BL"}, 
+                    {"RCX", "ECX", "CX", "CH", "CL"}, 
+                    {"RDX", "EDX", "DX", "DH", "DL"}};
+char * functions[] = {"OPEN", "READ", "WRITE", "PRNUM"};
+char * comp_flags[] = {"GLOBAL"};
+
 void print_instruction(instruction_t instruction){
     fputs("TOKEN TYPE: ", stdout);
     switch(instruction.token_type){

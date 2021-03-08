@@ -37,8 +37,14 @@ int main(int argc, char ** argv){
         }
     }
 
+    char * test[] = {"temp"};
     init();
-    compile(argv[src_index], dest, fun_flags);
+    i = compile(argv[src_index], "temp", fun_flags);
+    if(-1 == i){
+        goto cleanup;
+    }
+    memset(text, 0, page_size);
+    linker(dest, 1, test);
 
 cleanup:
     exit(0);

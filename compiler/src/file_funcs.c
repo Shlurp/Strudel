@@ -2,7 +2,6 @@
 
 file_t * MF_open(char * path){
     int fd = 0;
-    int page_size = 0;
     off_t file_size = 0;
     size_t map_size = 0;
     file_t * file = NULL;
@@ -24,8 +23,6 @@ file_t * MF_open(char * path){
         file = ptr_print_error("\e[31mINIT_FILE\e[0m: Lseek error", NULL);
         goto cleanup;
     }
-
-    page_size = getpagesize();
 
     if(file_size % page_size != 0){
         map_size = (file_size / page_size + 1) * page_size;

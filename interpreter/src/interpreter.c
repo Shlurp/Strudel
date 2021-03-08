@@ -1,17 +1,6 @@
 #include "inter.h"
 #include "termios.h"
 
-char * tokens[] = {"PUSH", "POP", "MOV", "LEA", "CMP", "JMP", "CALL", "JE", "JNE", "JG", "JGE", "JL", "JLE", "ADD", "SUB", "MUL", "DIV", "TAG", "SET", "[", "]", "END"};
-char * sizes[] = {"BYTE", "WORD", "DWORD", "QWORD"};
-char * regs[][5] = {{"RIP"},
-                    {"RSP"}, 
-                    {"RTP"},
-                    {"RBP"}, 
-                    {"RAX", "EAX", "AX", "AH", "AL"}, 
-                    {"RBX", "EBX", "BX", "BH", "BL"}, 
-                    {"RCX", "ECX", "CX", "CH", "CL"}, 
-                    {"RDX", "EDX", "DX", "DH", "DL"}};
-
 int errnum = 0;
 
 int get_next_instruction(FILE * source, instruction_t * instruction, int line_no){
@@ -35,12 +24,9 @@ int get_next_instruction(FILE * source, instruction_t * instruction, int line_no
         case NUM: return_value = rread(&instruction->data.num, sizeof(instruction->data.num), 1, source); break;
         case SIZE: return_value = rread(&instruction->data.size, sizeof(instruction->data.size), 1, source); break;
         case TAGGEE:
-        case STRING: {
-            return_value = rread(&instruction->data.str, sizeof(instruction->data.str), 1, source);
-            // instruction->data.str = (char *)((long int)text + (long int)instruction->data.str);
-            break;
-        }
+        case STRING: return_value = rread(&instruction->data.str, sizeof(instruction->data.str), 1, source); break;
         case FUNCTION: return_value = rread(&instruction->data.function, sizeof(instruction->data.function), 1, source); break;
+        case FLAG: return_value = rread(&instruction->data.flag, sizeof(instruction->data.flag), 1, source); break;
         case NONE: break;
         default: {
             printf("\e[31mError\e[0m on line \e[31m%i\e[0m: Invalid token type value (%i) (index %i)\n", line_no, instruction->token_type, reg_struct.etp);
@@ -95,8 +81,6 @@ int * get_pointer_value(FILE * source, int line_no){
     while( !(TOKEN == instructions[reg_struct.etp].token_type && 
             OUT == instructions[reg_struct.etp].data.token) &&  
             NONE != instructions[reg_struct.etp].token_type){
-
-        //printf("TOKEN TYPE: %i\nVALUE: %i\n", instructions[reg_struct.etp].token_type, instructions[reg_struct.etp].data.token);
             
         if(TOKEN == instructions[reg_struct.etp].token_type && IN == instructions[reg_struct.etp].data.token){
             reg_struct.etp ++;

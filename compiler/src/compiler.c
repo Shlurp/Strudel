@@ -1,7 +1,5 @@
 #include "comp.h"
 
-#define FILE_NAME_LEN 16
-
 char * tokens[] = {"PUSH", "POP", "MOV", "LEA", "CMP", "JMP", "CALL", "JE", "JNE", "JG", "JGE", "JL", "JLE", "ADD", "SUB", "MUL", "DIV", "TAG", "SET", "[", "]", "END"};
 char * sizes[] = {"BYTE", "WORD", "DWORD", "QWORD"};
 char * regs[][5] = {{"RIP"},
@@ -13,6 +11,7 @@ char * regs[][5] = {{"RIP"},
                     {"RCX", "ECX", "CX", "CH", "CL"}, 
                     {"RDX", "EDX", "DX", "DH", "DL"}};
 char * functions[] = {"OPEN", "READ", "WRITE", "PRNUM"};
+char * comp_flags[] = {"GLOBAL"};
 
 int errnum = 0;
 registers_t reg_struct = {0};
@@ -253,6 +252,15 @@ int get_next_instruction(file_t * source, instruction_t * instruction, int * lin
         }
     }
 
+    for(i=0; i<sizeof(comp_flags)/sizeof(comp_flags[0]); i++){
+        difference = strncmp(token_str, comp_flags[i], BUFFER_SIZE);
+        if(0 == difference){
+            instruction->token_type = FLAG;
+            instruction->data.flag = i + 1;
+            goto cleanup;
+        }
+    }
+
     j = 1;
     if('-' == token_str[0]){
         i = 1;
@@ -313,6 +321,7 @@ cleanup:
 int manage_sequence(file_t * source, int compiled_fd, int * line_no, func_flags_t fun_flags){
     int error_check = 0;
     off_t offset = 0;
+    bool_t global = false;
     long int value = 0;
     variable_t * var = NULL;
 
@@ -347,7 +356,7 @@ int manage_sequence(file_t * source, int compiled_fd, int * line_no, func_flags_
 
         error_check = insert_variable(instructions[reg_struct.etp].data.str, 
                                       reg_struct.rtp.reg_64 - (long int)text  /*The offset of where the variable will be appended to the text data section*/, 
-                                      false, true, -1, false);
+                                      false, true, true, -1, false);
         if(-1 == error_check){
             goto cleanup;
         }
@@ -360,15 +369,30 @@ int manage_sequence(file_t * source, int compiled_fd, int * line_no, func_flags_
             goto cleanup;
         }
 
-        free(instructions[reg_struct.etp].data.str);
+        if(instructions[reg_struct.etp].token_type == STRING){
+            free(instructions[reg_struct.etp].data.str);
+        }
     }
 
     else if(TAG == instructions[reg_struct.etp].data.token){
         reg_struct.etp ++;
-        if(STRING != instructions[reg_struct.etp].token_type){
-            printf("\e[31mError\e[0m: Invalid token type on line \e[31m%i\e[0m (second token of TAG instruction must be string)", *line_no);
-            error_check = -1;
-            goto cleanup;
+        if(FLAG == instructions[reg_struct.etp].token_type){
+            global = true;
+        }
+        else{
+            if(STRING != instructions[reg_struct.etp].token_type){
+                printf("\e[31mError\e[0m: Invalid token type on line \e[31m%i\e[0m (second token of TAG instruction must be string)", *line_no);
+                error_check = -1;
+                goto cleanup;
+            }
+
+            error_check = strncmp(instructions[reg_struct.etp].data.str, ENTRY_POINT, BUFFER_SIZE);
+            if(0 == error_check){
+                global = true;
+            }
+            else{
+                global = false;
+            }
         }
 
         offset = lseek(compiled_fd, 0, SEEK_CUR);
@@ -377,7 +401,7 @@ int manage_sequence(file_t * source, int compiled_fd, int * line_no, func_flags_
             goto cleanup;
         }
 
-        error_check = insert_variable(instructions[reg_struct.etp].data.str, offset, true, true, -1, false);
+        error_check = insert_variable(instructions[reg_struct.etp].data.str, offset, true, global, true, -1, false);
         if(-1 == error_check){
             goto cleanup;
         }
@@ -410,14 +434,14 @@ int manage_sequence(file_t * source, int compiled_fd, int * line_no, func_flags_
                 case TAGGEE:
                 case STRING: {
                     error_check = get_var(instructions[reg_struct.etp].data.str, &var);
-                    if(-1 == error_check){      // Variable has not been read yet
+                    //if(-1 == error_check){      // Variable has not been read yet or is a global variable
                         offset = lseek(compiled_fd, 0, SEEK_CUR);
                         if(-1 == offset){
                             error_check = print_error("\e[31mMANAGE_SEQUENCE\e[0m: Lseek error", -1);
                             goto cleanup;
                         }
 
-                        error_check = insert_variable(instructions[reg_struct.etp].data.str, -1, false, false, offset, true);
+                        error_check = insert_variable(instructions[reg_struct.etp].data.str, -1, false, true, false, offset, true);
                         if(-1 == error_check){
                             goto cleanup;
                         }
@@ -425,7 +449,7 @@ int manage_sequence(file_t * source, int compiled_fd, int * line_no, func_flags_
                         value = 0;
                         error_check = write(compiled_fd, &value, sizeof(u_int8_t));
                         error_check = write(compiled_fd, &value, sizeof(value));
-                    }
+                    /*}
                     else{
                         if(var->istag){
                             instructions[reg_struct.etp].token_type = TAGGEE;
@@ -438,7 +462,7 @@ int manage_sequence(file_t * source, int compiled_fd, int * line_no, func_flags_
                         }
 
                         error_check = write(compiled_fd, &var->value, sizeof(var->value));
-                    }
+                    }*/
 
                     free(instructions[reg_struct.etp].data.str);
 
@@ -477,14 +501,16 @@ int compile(char * source_name, char * compiled_name, func_flags_t fun_flags){
     int compiled_fd = -1;
     int temp_fd = -1;
     int i = 0;
-    long int j = 0;
-    off_t main_offset = 0;
+    //long int j = 0;
+    //off_t main_offset = 0;
+    off_t code_start = 0;
+    off_t code_start_off = 0;
     long int text_size = 0;
-    char temp_file_name[FILE_NAME_LEN] = {0};
     char buffer[BUFFER_SIZE] = {0};
-    u_int8_t tag_type = 0;
+    char temp_file_name[FILE_NAME_LEN] = {0};
+    //u_int8_t tag_type = 0;
     bool_t eof = false;
-    variable_t * curr_var = NULL;
+    //variable_t * curr_var = NULL;
 
     source = MF_open(source_name);
     if(NULL == source){
@@ -492,20 +518,10 @@ int compile(char * source_name, char * compiled_name, func_flags_t fun_flags){
         goto cleanup;
     }
 
-    for(j=0; j<=999999999999999; j++){
-        sprintf(temp_file_name, "%li", j);
-        errno = 0;
-        temp_fd = open(temp_file_name, O_RDWR | O_EXCL | O_CREAT, 0666);
-        if(-1 == temp_fd){
-            if(EEXIST == errno){
-                continue;
-            }
-            else{
-                error_check = print_error("\e[31mCOMPILE\e[0m: Open error", -1);
-                goto cleanup;
-            }
-        }
-        break;
+    temp_fd = get_temp_file(temp_file_name);
+    if(-1 == temp_fd){
+        error_check = -1;
+        goto cleanup;
     }
 
     while(!MF_eof(source)){
@@ -516,6 +532,7 @@ int compile(char * source_name, char * compiled_name, func_flags_t fun_flags){
         }
     }
 
+    #if 0
     for(i=0; i<BUFFER_SIZE; i++){
         curr_var = variables[i];
         
@@ -556,6 +573,7 @@ int compile(char * source_name, char * compiled_name, func_flags_t fun_flags){
             curr_var = curr_var->next;
         }
     }
+    #endif
 
     compiled_fd = open(compiled_name, O_RDWR | O_TRUNC | O_CREAT, 0666);
     if(-1 == compiled_fd){
@@ -563,7 +581,7 @@ int compile(char * source_name, char * compiled_name, func_flags_t fun_flags){
         goto cleanup;
     }
 
-    error_check = write(compiled_fd, magic, magic_len+1);
+    error_check = write(compiled_fd, obj_magic, obj_magic_len+1);
     if(-1 == error_check){
         print_error("\e[31mCOMPILE\e[0m: Write error", -1);
         goto cleanup;
@@ -575,6 +593,19 @@ int compile(char * source_name, char * compiled_name, func_flags_t fun_flags){
         goto cleanup;
     }
 
+    code_start_off = lseek(compiled_fd, 0, SEEK_CUR);
+    if(-1 == code_start_off){
+        error_check = print_error("\e[31mCOMPILE\e[0m: Lseek error", -1);
+        goto cleanup;
+    }
+
+    error_check = write(compiled_fd, &code_start, sizeof(code_start));
+    if(-1 == error_check){
+        print_error("\e[31mCOMPILE\e[0m: Write error", -1);
+        goto cleanup;
+    }
+
+    #if 0
     error_check = get_value(ENTRY_POINT, &main_offset);
     if(-1 == error_check){
         printf("\e[31mError\e[0m: No %s tag\n", ENTRY_POINT);
@@ -585,6 +616,16 @@ int compile(char * source_name, char * compiled_name, func_flags_t fun_flags){
         print_error("\e[31mCOMPILE\e[0m: Write error", -1);
         goto cleanup;
     }
+    #endif
+
+
+    print_variables(true);
+
+    error_check = write_vars(compiled_fd);
+    if(-1 == error_check){
+        goto cleanup;
+    }
+
     free_variables();
     
     text_size = reg_struct.rtp.reg_64 - (long int)text;
@@ -596,6 +637,27 @@ int compile(char * source_name, char * compiled_name, func_flags_t fun_flags){
     error_check = write(compiled_fd, text, text_size);
     if(-1 == error_check){
         print_error("\e[31mCOMPILE\e[0m: Write error", -1);
+        goto cleanup;
+    }
+
+    code_start = lseek(compiled_fd, 0, SEEK_CUR);
+    if(-1 == code_start_off){
+        error_check = print_error("\e[31mCOMPILE\e[0m: Lseek error", -1);
+        goto cleanup;
+    }
+    error_check = lseek(compiled_fd, code_start_off, SEEK_SET);
+    if(-1 == error_check){
+        error_check = print_error("\e[31mCOMPILE\e[0m: Lseek error", -1);
+        goto cleanup;
+    }
+    error_check = write(compiled_fd, &code_start, sizeof(code_start));
+    if(-1 == error_check){
+        error_check = print_error("\e[31mCOMPILE\e[0m: Write error", -1);
+        goto cleanup;
+    }
+    error_check = lseek(compiled_fd, code_start, SEEK_SET);
+    if(-1 == error_check){
+        error_check = print_error("\e[31mCOMPILE\e[0m: Lseek error", -1);
         goto cleanup;
     }
 
@@ -623,7 +685,7 @@ int compile(char * source_name, char * compiled_name, func_flags_t fun_flags){
         }
     }
 
-    munmap(text, getpagesize());
+    //munmap(text, page_size);
 
 cleanup:
     if(0 != temp_file_name[0]){

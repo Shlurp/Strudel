@@ -2,7 +2,7 @@
 
 variable_t * variables[BUFFER_SIZE] = {0};
 
-int insert_variable(char * variable_name, long int value, bool_t istag, bool_t insert_value, off_t offset, bool_t insert_offset){
+int insert_variable(char * variable_name, long int value, bool_t istag, bool_t isglobal, bool_t insert_value, off_t offset, bool_t insert_offset){
     int return_value = 0;
     unsigned int name_hash = 0;
     int diff = 0;
@@ -51,8 +51,10 @@ int insert_variable(char * variable_name, long int value, bool_t istag, bool_t i
             curr_node->value_set = true;
             curr_node->value = value;
             curr_node->istag = istag;
+            curr_node->isglobal = isglobal;
         }
         else{
+            curr_node->value_set = false;
             curr_node->value = 0;
         }
 
@@ -71,10 +73,13 @@ int insert_variable(char * variable_name, long int value, bool_t istag, bool_t i
             curr_node->value_set = true;
             curr_node->value = value;
             curr_node->istag = istag;
+            curr_node->isglobal = isglobal;
         }
-        else{
+        #if 0
+        else{       // This should make the program fail, no?
             curr_node->value_set = false;
         }
+        #endif
     }
 
 cleanup:
@@ -133,6 +138,8 @@ void free_variables(){
             curr_node = next_node;
         }
     }
+
+    memset(variables, 0, sizeof(variables));
 }
 
 int get_value(char * variable_name, long int * value){
@@ -283,4 +290,165 @@ int append_variable_to_data(char * value, token_type_t size, int line_no){
     
 cleanup:
     return return_value;
+}
+
+int write_vars(int fd){
+    int error_check = 0;
+    int name_len = 0;
+    int i = 0;
+    int num_vars = 0;
+    off_t start_off = 0;
+    off_t end_off = 0;
+    variable_t * curr_var = NULL;
+
+    start_off = lseek(fd, 0, SEEK_CUR);
+    if(-1 == start_off){
+        print_error("\e[31mWRITE_VARS\e[0m: Lseek error", -1);
+        goto cleanup;
+    }
+
+    error_check = write(fd, &num_vars, sizeof(num_vars));
+    if(-1 == error_check){
+        print_error("\e[31mWRITE_VARS\e[0m: Write error", -1);
+        goto cleanup;
+    }
+
+    for(i=0; i<BUFFER_SIZE; i++){
+        curr_var = variables[i];
+        while(curr_var != NULL){
+            name_len = strnlen(curr_var->name, BUFFER_SIZE);
+            error_check = write(fd, &name_len, sizeof(name_len));
+            if(-1 == error_check){
+                print_error("\e[31mWRITE_VARS\e[0m: Write error", -1);
+                goto cleanup;
+            }
+
+            error_check = write(fd, curr_var->name, name_len);
+            if(-1 == error_check){
+                print_error("\e[31mWRITE_VARS\e[0m: Write error", -1);
+                goto cleanup;
+            }
+
+            error_check = write(fd, &curr_var->value_set, sizeof(curr_var->value_set));
+            if(-1 == error_check){
+                print_error("\e[31mWRITE_VARS\e[0m: Write error", -1);
+                goto cleanup;
+            }
+
+            if(curr_var->value_set){
+                error_check = write(fd, &curr_var->value, sizeof(curr_var->value));
+                if(-1 == error_check){
+                    print_error("\e[31mWRITE_VARS\e[0m: Write error", -1);
+                    goto cleanup;
+                }
+            }
+
+            error_check = write(fd, &curr_var->istag, sizeof(curr_var->istag));
+            if(-1 == error_check){
+                print_error("\e[31mWRITE_VARS\e[0m: Write error", -1);
+                goto cleanup;
+            }
+
+            error_check = write(fd, &curr_var->isglobal, sizeof(curr_var->isglobal));
+            if(-1 == error_check){
+                print_error("\e[31mWRITE_VARS\e[0m: Write error", -1);
+                goto cleanup;
+            }
+
+            error_check = write_list(fd, &curr_var->offsets);
+            if(-1 == error_check){
+                goto cleanup;
+            }
+
+            num_vars ++;
+            curr_var = curr_var->next;
+        }
+    }
+
+    end_off = lseek(fd, 0, SEEK_CUR);
+    if(-1 == end_off){
+        print_error("\e[31mWRITE_VARS\e[0m: Lseek error", -1);
+        goto cleanup;
+    }
+
+    error_check = lseek(fd, start_off, SEEK_SET);
+    if(-1 == error_check){
+        print_error("\e[31mWRITE_VARS\e[0m: Lseek error", -1);
+        goto cleanup;
+    }
+
+    error_check = write(fd, &num_vars, sizeof(num_vars));
+    if(-1 == error_check){
+        print_error("\e[31mWRITE_VARS\e[0m: Write error", -1);
+        goto cleanup;
+    }
+
+    error_check = lseek(fd, end_off, SEEK_SET);
+    if(-1 == error_check){
+        print_error("\e[31mWRITE_VARS\e[0m: Lseek error", -1);
+        goto cleanup;
+    }
+
+
+cleanup:
+    return error_check;
+}
+
+int read_var(int fd, variable_t * var){
+    int error_check = 0;
+    int name_len = 0;
+
+    error_check = read(fd, &name_len, sizeof(name_len));
+    if(-1 == error_check){
+        print_error("\e[31mREAD_VAR\e[0m: Read error", -1);
+        goto cleanup;
+    }
+
+    var->name = calloc(name_len+1, sizeof(char));
+    if(NULL == var->name){
+        print_error("\e[31mREAD_VAR\e[0m: Calloc error", -1);
+        goto cleanup;
+    }
+
+    error_check = read(fd, var->name, name_len);
+    if(-1 == error_check){
+        print_error("\e[31mREAD_VAR\e[0m: Read error", -1);
+        goto cleanup;
+    }
+
+    error_check = read(fd, &var->value_set, sizeof(var->value_set));
+    if(-1 == error_check){
+        print_error("\e[31mREAD_VAR\e[0m: Read error", -1);
+        goto cleanup;
+    }
+
+    if(var->value_set){
+        error_check = read(fd, &var->value, sizeof(var->value));
+        if(-1 == error_check){
+            print_error("\e[31mREAD_VAR\e[0m: Read error", -1);
+            goto cleanup;
+        }
+    }
+
+    error_check = read(fd, &var->istag, sizeof(var->istag));
+    if(-1 == error_check){
+        print_error("\e[31mREAD_VAR\e[0m: Read error", -1);
+        goto cleanup;
+    }
+
+    error_check = read(fd, &var->isglobal, sizeof(var->isglobal));
+    if(-1 == error_check){
+        print_error("\e[31mREAD_VAR\e[0m: Read error", -1);
+        goto cleanup;
+    }
+
+    error_check = read_list(fd, &var->offsets);
+    if(-1 == error_check){
+        goto cleanup;
+    }
+
+    printf("VAR: %s\n%i: %li\n%i, %i\n", var->name, var->value_set, var->value, var->istag, var->isglobal);
+
+cleanup:
+    return error_check;
 }
