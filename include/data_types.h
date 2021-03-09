@@ -7,7 +7,7 @@
 typedef u_int8_t bool_t;
 
 typedef enum token_type_e {TOKEN=1, REGISTER, NUM, SIZE, STRING, TAGGEE, FUNCTION, FLAG}token_type_t;
-typedef enum token_e {PUSH=1, POP, MOV, LEA, CMP, JMP, CALL, JE, JNE, JG, JGE, JL, JLE, ADD, SUB, MUL, DIV, TAG, SET, IN, OUT, END}token_t;
+typedef enum token_e {PUSH=1, POP, MOV, LEA, CMP, JMP, CALL, JE, JNE, JG, JGE, JL, JLE, ADD, SUB, MUL, DIV, AND, OR, XOR, TAG, SET, IN, OUT, END}token_t;
 typedef enum register_token_e {RIP=NUM_REG_SIZE, RSP, RTP, RBP, RAX, RBX, RCX, RDX}register_token_t;
 typedef enum deref_size_e {BYTE=1, WORD, DWORD, QWORD}deref_size_t;
 typedef enum function_e {OPEN=1, READ, WRITE, PRNUM}function_t;
@@ -17,13 +17,6 @@ typedef struct flags_s{
     unsigned char zf : 1;
     unsigned char sf : 1;
 }flags_t;
-
-typedef struct func_flags_s{
-    unsigned char print_stack : 1;
-    unsigned char print_instructions : 1;
-    unsigned char print_regs : 1;
-    unsigned char print_flags : 1;
-}func_flags_t;
 
 union reg_u{
     long int reg_64;
