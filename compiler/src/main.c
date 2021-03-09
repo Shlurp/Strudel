@@ -61,8 +61,10 @@ int main(int argc, char ** argv){
         if(-1 == error_check){
             goto cleanup;
         }
+
+        reg_struct.rtp.reg_64 = (long int)text;
+        memset(text, 0, page_size);
     }
-    memset(text, 0, page_size);
     linker(dest, input_files.length, obj_files);
 
     for(i=0; i<input_files.length; i++){

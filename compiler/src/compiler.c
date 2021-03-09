@@ -348,15 +348,36 @@ int manage_sequence(file_t * source, int compiled_fd, int * line_no, func_flags_
 
     if(SET == instructions[reg_struct.etp].data.token){
         reg_struct.etp ++;
+        global = false;
+
+        if(FLAG == instructions[reg_struct.etp].token_type){
+            if(GLOBAL == instructions[reg_struct.etp].data.flag){
+                global = true;
+                reg_struct.etp ++;
+            }
+            else{
+                printf("\e[31mError\e[0m on line \e[31m%i\e[0m: Invalid flag type value\n", *line_no);
+                error_check = -1;
+                goto cleanup;
+            }
+        }
+        
         if(STRING != instructions[reg_struct.etp].token_type){
             printf("\e[31mError\e[0m: Invalid token type on line \e[31m%i\e[0m (second token of SET instruction must be string)", *line_no);
             error_check = -1;
             goto cleanup;
         }
 
+        error_check = get_value(instructions[reg_struct.etp].data.str, &value);
+        if(error_check != -1){
+            printf("\e[31mError\e[0m on line \e[31m%i\e[0m: Tag \e[31m%s\e[0m is defined twice\n", *line_no, instructions[reg_struct.etp].data.str);
+            error_check = -1;
+            goto cleanup;
+        }
+
         error_check = insert_variable(instructions[reg_struct.etp].data.str, 
                                       reg_struct.rtp.reg_64 - (long int)text  /*The offset of where the variable will be appended to the text data section*/, 
-                                      false, true, true, -1, false);
+                                      false, global, true, -1, false);
         if(-1 == error_check){
             goto cleanup;
         }
@@ -376,29 +397,41 @@ int manage_sequence(file_t * source, int compiled_fd, int * line_no, func_flags_
 
     else if(TAG == instructions[reg_struct.etp].data.token){
         reg_struct.etp ++;
+        global = false;
         if(FLAG == instructions[reg_struct.etp].token_type){
-            global = true;
-            reg_struct.etp ++;
-        }
-        else{
-            if(STRING != instructions[reg_struct.etp].token_type){
-                printf("\e[31mError\e[0m: Invalid token type on line \e[31m%i\e[0m (second token of TAG instruction must be string)", *line_no);
+            if(GLOBAL == instructions[reg_struct.etp].data.flag){
+                global = true;
+                reg_struct.etp ++;
+            }
+            else{
+                printf("\e[31mError\e[0m on line \e[31m%i\e[0m: Invalid flag type value\n", *line_no);
                 error_check = -1;
                 goto cleanup;
             }
+        }
+        if(STRING != instructions[reg_struct.etp].token_type){
+            printf("\e[31mError\e[0m: Invalid token type on line \e[31m%i\e[0m (second token of TAG instruction must be string)", *line_no);
+            error_check = -1;
+            goto cleanup;
+        }
 
+        if(!global){
             error_check = strncmp(instructions[reg_struct.etp].data.str, ENTRY_POINT, BUFFER_SIZE);
             if(0 == error_check){
                 global = true;
-            }
-            else{
-                global = false;
             }
         }
 
         offset = lseek(compiled_fd, 0, SEEK_CUR);
         if(-1 == offset){
             error_check = print_error("\e[31mMANAGE_SEQUENCE\e[0m: Lseek error", -1);
+            goto cleanup;
+        }
+
+        error_check = get_value(instructions[reg_struct.etp].data.str, &value);
+        if(error_check != -1){
+            printf("\e[31mError\e[0m on line \e[31m%i\e[0m: Tag \e[31m%s\e[0m is defined twice\n", *line_no, instructions[reg_struct.etp].data.str);
+            error_check = -1;
             goto cleanup;
         }
 

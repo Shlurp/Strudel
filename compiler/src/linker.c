@@ -96,14 +96,13 @@ int linker(char * output, int num_files, char ** file_names){
             goto cleanup;
         }
 
-        // Offsets are wrong
         for(j=0; j<num_of_vars; j++){
             error_check = read_var(curr_fd, &curr_file_var);
             if(-1 == error_check){
                 goto cleanup;
             }
 
-            if(curr_file_var.istag && curr_file_var.value_set){
+            if(curr_file_var.value_set){
                 if(curr_file_var.istag){
                     curr_file_var.value += code_len;
                 }
@@ -112,7 +111,7 @@ int linker(char * output, int num_files, char ** file_names){
                 }
             }
 
-            if(curr_file_var.isglobal || !curr_file_var.istag || !curr_file_var.value_set){
+            if(curr_file_var.isglobal || !curr_file_var.value_set){
                 error_check = get_var(curr_file_var.name, &temp_var);
                 if(-1 == error_check){
                     error_check = insert_variable(curr_file_var.name, curr_file_var.value, curr_file_var.istag, curr_file_var.isglobal, curr_file_var.value_set, 0, false);
@@ -128,7 +127,7 @@ int linker(char * output, int num_files, char ** file_names){
                         error_check = -1;
                         goto cleanup;
                     }
-                    if(temp_var->istag != curr_file_var.istag){
+                    if(curr_file_var.value_set && temp_var->istag != curr_file_var.istag){
                         printf("\e[31mError\e[0m: \e[31m%s\e[0m defined as two different types\n", curr_file_var.name);
                         error_check = -1;
                         goto cleanup;
@@ -151,6 +150,7 @@ int linker(char * output, int num_files, char ** file_names){
             }
 
             else{
+                print_variables(true);
                 curr_off = lseek(curr_fd, 0, SEEK_CUR);
                 if(-1 == curr_off){
                     error_check = print_error("\e[31mLINKER\e[0m: Lseek error", -1);
