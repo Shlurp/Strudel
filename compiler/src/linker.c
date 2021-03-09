@@ -150,7 +150,6 @@ int linker(char * output, int num_files, char ** file_names){
             }
 
             else{
-                print_variables(true);
                 curr_off = lseek(curr_fd, 0, SEEK_CUR);
                 if(-1 == curr_off){
                     error_check = print_error("\e[31mLINKER\e[0m: Lseek error", -1);

@@ -1,7 +1,7 @@
 #include "comp.h"
 
 int main(int argc, char ** argv){
-    char * dest = "a.out";
+    char * dest = "stru.out";
     int error_check = 0;
     int i = 0;
     int j = 0;
@@ -29,6 +29,8 @@ int main(int argc, char ** argv){
                     case 'i': fun_flags.print_instructions = 1; break;
                     case 'h': print_help(); goto cleanup;
                     case 'o': dest_raised = true; break;
+                    case 'c': fun_flags.no_link = 1; break;
+                    case 'l': fun_flags.only_link = 1; break;
                     default: printf("\e[31mError\e[0m: Invalid flag (\e[31m-%c\e[0m)\n", argv[i][j]); goto cleanup;
                 }
             }
@@ -47,29 +49,56 @@ int main(int argc, char ** argv){
         }
     }
 
-    
-    for(i=0; i<input_files.length; i++){
-        error_check = replace_extension((char *)input_files.list[i], "o", &(obj_files[i]));
-        if(-1 == error_check){
-            goto cleanup;
-        }
+    if(fun_flags.no_link && fun_flags.only_link){
+        puts("\e[31mError\e[0m: Cannot raise -c (no-link) and -l (only-link) flags together");
+        goto cleanup;
     }
 
     init();
-    for(i=0; i<input_files.length; i++){
-        error_check = compile((char *)input_files.list[i], obj_files[i], fun_flags);
+
+    if(fun_flags.only_link){
+        error_check = linker(dest, input_files.length, (char **)input_files.list);
         if(-1 == error_check){
             goto cleanup;
         }
-
-        reg_struct.rtp.reg_64 = (long int)text;
-        memset(text, 0, page_size);
     }
-    linker(dest, input_files.length, obj_files);
+    else{
+        for(i=0; i<input_files.length; i++){
+            error_check = replace_extension((char *)input_files.list[i], "o", &(obj_files[i]));
+            if(-1 == error_check){
+                goto cleanup;
+            }
+        }
 
-    for(i=0; i<input_files.length; i++){
-        remove(obj_files[i]);
-        free(obj_files[i]);
+        if(!fun_flags.no_link){
+            for(i=0; i<input_files.length; i++){
+                error_check = compile((char *)input_files.list[i], obj_files[i], fun_flags);
+                if(-1 == error_check){
+                    goto cleanup;
+                }
+
+                reg_struct.rtp.reg_64 = (long int)text;
+                memset(text, 0, page_size);
+            }
+            
+            linker(dest, input_files.length, obj_files);
+
+            for(i=0; i<input_files.length; i++){
+                remove(obj_files[i]);
+                free(obj_files[i]);
+            }
+        }
+        else{
+            if(input_files.length != 1){
+                puts("\e[31mError\e[0m: Must input \e[1mone\e[0m input file");
+                goto cleanup;
+            }
+
+            error_check = compile((char *)input_files.list[0], dest, fun_flags);
+            if(-1 == error_check){
+                goto cleanup;
+            }
+        }
     }
 
     free_list(&input_files);

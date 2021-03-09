@@ -5,9 +5,11 @@ char * text = NULL;
 
 char * magic = "STRUDEL";
 char * obj_magic = "OBJSTRUDEL";
+char * sobj_magic = "SHAREDOBJSTRUDEL";
 int obj_magic_len = 0;
 int magic_len = 0;
-int version[3] = {0, 1, 0};
+int sobj_magic_len = 0;
+int version[3] = {0, 1, 1};
 int oldest_compatible[3] = {0, 0, 0};
 
 int page_size = 0;
@@ -17,6 +19,7 @@ int init(){
 
     magic_len = strnlen(magic, BUFFER_SIZE);
     obj_magic_len = strnlen(obj_magic, BUFFER_SIZE);
+    sobj_magic_len = strnlen(sobj_magic, BUFFER_SIZE);
 
     page_size = getpagesize();
 

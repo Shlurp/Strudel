@@ -28,4 +28,10 @@ typedef struct variable_s{
     list_t offsets;         // Offsets in the file to insert the justified value at
 }variable_t;
 
+typedef struct func_flags_s{
+    u_int8_t print_instructions : 1;
+    u_int8_t no_link : 1;
+    u_int8_t only_link : 1;
+}func_flags_t;
+
 #endif

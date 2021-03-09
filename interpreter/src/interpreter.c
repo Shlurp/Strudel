@@ -640,6 +640,9 @@ int execute_instructions(FILE * source, int line_no){
             break;
         }
         
+        case XOR:
+        case OR:
+        case AND:
         case DIV:
         case MUL:
         case SUB:
@@ -684,6 +687,9 @@ int execute_instructions(FILE * source, int line_no){
                 case SUB: temp -= temp1; break;
                 case MUL: temp *= temp1; break;
                 case DIV: temp /= temp1; break;
+                case AND: temp &= temp1; break;
+                case OR:  temp |= temp1; break;
+                case XOR: temp ^= temp1; break;
                 default: break;
             }
 

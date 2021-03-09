@@ -1,6 +1,6 @@
 #include "comp.h"
 
-char * tokens[] = {"PUSH", "POP", "MOV", "LEA", "CMP", "JMP", "CALL", "JE", "JNE", "JG", "JGE", "JL", "JLE", "ADD", "SUB", "MUL", "DIV", "TAG", "SET", "[", "]", "END"};
+char * tokens[] = {"PUSH", "POP", "MOV", "LEA", "CMP", "JMP", "CALL", "JE", "JNE", "JG", "JGE", "JL", "JLE", "ADD", "SUB", "MUL", "DIV", "AND", "OR", "XOR", "TAG", "SET", "[", "]", "END"};
 char * sizes[] = {"BYTE", "WORD", "DWORD", "QWORD"};
 char * regs[][5] = {{"RIP"},
                     {"RSP"}, 
@@ -535,16 +535,12 @@ int compile(char * source_name, char * compiled_name, func_flags_t fun_flags){
     int compiled_fd = -1;
     int temp_fd = -1;
     int i = 0;
-    //long int j = 0;
-    //off_t main_offset = 0;
     off_t code_start = 0;
     off_t code_start_off = 0;
     long int text_size = 0;
     char buffer[BUFFER_SIZE] = {0};
     char temp_file_name[FILE_NAME_LEN] = {0};
-    //u_int8_t tag_type = 0;
     bool_t eof = false;
-    //variable_t * curr_var = NULL;
 
     source = MF_open(source_name);
     if(NULL == source){
@@ -565,49 +561,6 @@ int compile(char * source_name, char * compiled_name, func_flags_t fun_flags){
             goto cleanup;
         }
     }
-
-    #if 0
-    for(i=0; i<BUFFER_SIZE; i++){
-        curr_var = variables[i];
-        
-        while(curr_var != NULL){
-            if(!curr_var->value_set){
-                printf("\e[31mError\e[0m: tag/var \e[31m%s\e[0m is referenced but never set.\n", curr_var->name);
-                error_check = -1;
-                goto cleanup;
-            }
-
-            for(j=0; j<curr_var->offsets.length; j++){
-                error_check = lseek(temp_fd, curr_var->offsets.list[j], SEEK_SET);
-                if(-1 == error_check){
-                    print_error("\e[31mCOMPILE\e[0m: Lseek error", -1);
-                    goto cleanup;
-                }
-
-                if(curr_var->istag){
-                    tag_type = TAGGEE;
-                }
-                else{
-                    tag_type = STRING;
-                }
-
-                error_check = write(temp_fd, &tag_type, sizeof(tag_type));
-                if(-1 == error_check){
-                    print_error("\e[31mCOMPILE\e[0m: Write error", -1);
-                    goto cleanup;
-                }
-
-                error_check = write(temp_fd, &curr_var->value, sizeof(curr_var->value));
-                if(-1 == error_check){
-                    print_error("\e[31mCOMPILE\e[0m: Write error", -1);
-                    goto cleanup;
-                }
-            }
-
-            curr_var = curr_var->next;
-        }
-    }
-    #endif
 
     compiled_fd = open(compiled_name, O_RDWR | O_TRUNC | O_CREAT, 0666);
     if(-1 == compiled_fd){
