@@ -17,12 +17,16 @@ LEA RCX [RAX + RBX]
 
 **AS OF NOW, LEA doesn't support multiplication or division, as Strudel doesn't support the order of operations**
 
-Now, while `LEA` may not support arithmetic operations, there are instructions that do:
+Now, while `LEA` may not support all arithmetic operations, there are instructions that do:
 + `ADD` \<REG 1> \<REG 2 / NUM> - Adds **REG 2** or **NUM** to **REG 1**
 + `SUB` \<REG 1> \<REG 2 / NUM> - Subtracts **REG 2** or **NUM** from **REG 1**
 + `MUL` \<REG 1> \<REG 2 / NUM> - Multiplies **REG 1** by **REG 2** or **NUM**
 + `DIV` \<REG 1> \<REG 2 / NUM> - Divides **REG 1** by **REG 2** or **NUM** 
 
+There are also bitwise operators:
++ `AND`\<REG 1> \<REG 2 / NUM> - Bitwise ANDs **REG 2** or **NUM** to **REG 1**
++ `OR`\<REG 1> \<REG 2 / NUM> - Bitwise ORs **REG 2** or **NUM** to **REG 1**
++ `XOR`\<REG 1> \<REG 2 / NUM> - Bitwise XORs **REG 2** or **NUM** to **REG 1**
 ***
 
 For a demo of how these five instruction work, look [here](../../demos/tutorials/lea.asm)

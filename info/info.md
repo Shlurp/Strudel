@@ -53,8 +53,8 @@ The LEA has the following usage:
 
 ### **TAG**
 Usage:
-**TAG \<NAME>**  
-This creates a tag by the name of NAME, and jumps to this tag will jump to the line underneath this instruction.
+**TAG \[GLOBAL] \<NAME>**  
+This creates a tag by the name of NAME, and jumps to this tag will jump to the line underneath this instruction. If GLOBAL is raised, then this tag can be used by other Strudel files compiled with it.
 
 ### **CMP**
 The CMP function compares two values, and has the following usage:  
@@ -81,12 +81,14 @@ Usage:
 
 ### **SET**
 Usage:
-**SET \<VAR NAME> \<STRING / NUM>** - Creates a global variable (in the text data section) by the name of NAME with the value STRING or NUM. You must use quotation marks for a string.  
+**SET \[GOBAL] \<VAR NAME> \<STRING / NUM>** - Creates a global variable (in the text data section) by the name of NAME with the value STRING or NUM. You must use quotation marks for a string.  
 The following are recognized escape sequences:
 + `\n` - newline
 + `\r` - carriage return
 + `\b` - backspace
 + `\e` - escape character
+
+If GLOBAL is set, then this variable can be used by other files compiled with it.
 
 ### **END**
 Terminates the program (should only be used at the end of the entry subroutine)  
